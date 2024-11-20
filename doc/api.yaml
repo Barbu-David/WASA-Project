@@ -15,9 +15,9 @@ paths:
         If the user exists, the user identifier is returned.
       operationId: doLogin
       requestBody:
-        description: User details
-        required: true
-        content:
+         description: User details
+         required: true
+         content:
           application/json:
             schema:
               type: object
@@ -25,7 +25,7 @@ paths:
                 name:
                   type: string
                   example: Maria
-                  pattern: '^.*?$'
+                  pattern: 'ˆ.*?$'
                   minLength: 3
                   maxLength: 16
       responses:
@@ -36,426 +36,724 @@ paths:
               schema:
                 type: object
                 properties:
-                  identifier:
-                    type: string
-                    example: "abcdef012345"
-  /users/{id}:
-    get:
-      summary: Get conversations for a specific user
-      description: Returns a list of conversation IDs associated with the specified user.
-      operationId: getMyConversations
+                  username:
+                   $ref: '#/components/schemas/Username'
+                  apiKey:
+                   type: string
+                   example: "xyz1234567890abcdef"
+  /users/{id}/name:
+    put:
+      tags: ["user info"]
+      summary: Update a user's name
+      description: Update the username for a user identified by their unique ID.
+      operationId: setMyUserName 
+      security:
+        - PrettyGoodSecurity: []
       parameters:
         - name: id
           in: path
           required: true
-          description: ID of the user to retrieve conversations for.
+          description: The unique identifier for a user.
           schema:
-            type: integer
-            example: 123
+            $ref: '#/components/schemas/UserId'
+      requestBody:
+        description: The new username to be assigned to the user.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  $ref: '#/components/schemas/Username'
+              required:
+                - username
+      responses:
+        '204':
+          description: Successfully updated the username.
+        '400':
+          description: Invalid input or parameters.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Invalid username format."
+        '401':
+          description: Unauthorized access due to missing or invalid security token.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Unauthorized."
+        '404':
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "User not found."
+  /users/{id}/photo:
+    put:
+      tags: ["user info"]
+      summary: Update a user's photo
+      description: Update the photo for a user identified by their unique ID.
+      operationId: setMyPhoto
+      security:
+        - PrettyGoodSecurity: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier for a user.
+          schema:
+            $ref: '#/components/schemas/UserId'
+      requestBody:
+        description: The new photo to be assigned to the user.
+        required: true
+        content:
+         image/gif:
+            schema:
+                type: string
+                format: binary
+      responses:
+        '204':
+          description: Successfully updated the photo.
+        '400':
+          description: Invalid input or parameters.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Not a gif."
+        '401':
+          description: Unauthorized access due to missing or invalid security token.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Unauthorized."
+        '404':
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "User not found."
+  /conversations:
+    get:
+      tags: ["getting conversations"]
+      summary: Retrieve conversations for a user
+      description: Retrieves a list of conversation IDs for a specific user.
+      operationId: getMyConversations 
+      security:
+        - PrettyGoodSecurity: []
       responses:
         '200':
           description: A list of conversation IDs.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: integer
-                example: [101, 102, 103, 104]
+                type: object
+                properties:
+                  conversations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ConversationId'
         '401':
-          description: Unauthorized - User is not authenticated.
-        '404':
-          description: User not found
-      
-  /users/{id}/name:
-    put:
-      summary: Update the name of a specific user
-      description: Updates the user's name to the provided value.
-      operationId: setMyUserName
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: ID of the user to update.
-          schema:
-            type: integer
-            example: 123
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: string
-              example: "John Doe"
-              minLength: 3
-              maxLength: 16
-      responses:
-        '200':
-          description: The user's name was successfully updated.
-        '400':
-          description: Bad Request - The input data is invalid.
-        '401':
-          description: Unauthorized - User is not authenticated.
-        '404':
-          description: User not found - The specified user does not exist.
-  /users/{id}/photo:
-    put:
-      summary: Update the photo of a specific user
-      description: Updates the user's photo with the provided .gif file.
-      operationId: setMyPhoto
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: ID of the user to update.
-          schema:
-            type: integer
-            example: 123
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                photo:
-                  type: string
-                  format: binary
-                  description: The user's new photo in .gif format.
-                  example: "/path/to/photo.gif"
-      responses:
-        '200':
-          description: The user's photo was successfully updated.
-        '400':
-          description: Bad Request - The uploaded photo is invalid.
-        '401':
-          description: Unauthorized - User is not authenticated.
-        '404':
-          description: User not found - The specified user does not exist.
+          description: Unauthorized access due to missing or invalid security token.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Unauthorized."
   /conversations/{convid}:
+    parameters:
+     - name: convid
+       in: path
+       required: true
+       description: The unique identifier for the conversation.
+       schema:
+         $ref: '#/components/schemas/ConversationId'
     get:
-      summary: Get a list of all message IDs in a conversation
-      description: Retrieves a list of all message IDs associated with a specific conversation, only accessible to authorized users.
+      tags: ["getting conversations"]
+      summary: Retrieve the deteils of a specific conversation
+      description: Retrieves the details of a specific conversation using its ID.
       operationId: getConversation
-      parameters:
-        - name: convid
-          in: path
-          required: true
-          description: The unique identifier of the conversation.
-          schema:
-            type: integer
-        - name: id
-          in: query
-          required: true
-          description: The user ID making the request. Only users who are part of the conversation can access it.
-          schema:
-            type: integer
+      security:
+        - PrettyGoodSecurity: []
       responses:
         '200':
-          description: A list of message IDs in the conversation
+          description: A specified conversation.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: integer
+                type: object
+                properties:
+                  participants:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserId'
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MessageId'
+        '400':
+          description: Invalid request due to malformed parameters.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Invalid conversation or message ID."
         '401':
-          description: Unauthorized - User is not part of the conversation or invalid credentials.
+          description: Unauthorized access due to missing or invalid security token.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Unauthorized."
         '404':
-          description: Conversation not found
-
+          description: Conversation not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Conversation not found."
     post:
-      summary: Send a message in a conversation
-      description: Allows a user to send a message to a conversation. The response is the message ID of the new message.
-      operationId: sendMessage
-      parameters:
-        - name: convid
-          in: path
-          required: true
-          description: The unique identifier of the conversation.
+     tags: ["messages"]
+     summary: Send a message to a specific conversation
+     description: Sends a new message to the specified conversation.
+     operationId: sendMessage
+     requestBody:
+      description: The message to be sent to the conversation.
+      required: true
+      content:
+        application/json:
           schema:
-            type: integer
-      requestBody:
-        required: true
+            $ref: '#/components/schemas/Message'
+        image/gif:
+          schema:
+            type: string
+            format: binary
+     security:
+      - PrettyGoodSecurity: []
+     responses:
+      '204':
+        description: Message successfully sent to the conversation.
+      '400':
+        description: Invalid request body or parameters.
         content:
           application/json:
             schema:
               type: object
               properties:
-                id:
-                  type: integer
-                  description: The user ID sending the message.
-                message:
+                error:
                   type: string
-                  description: The message content that the user wants to send.
-              required:
-                - id
-                - message
+                  example: "Invalid message format."
+      '401':
+        description: Unauthorized access due to missing or invalid security token.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "Unauthorized."
+      '404':
+        description: Conversation not found.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: "Conversation not found."
+  /conversations/{convid}/messages/{messageId}:
+    parameters:
+      - name: convid
+        in: path
+        required: true
+        description: The unique identifier for the conversation.
+        schema:
+          $ref: '#/components/schemas/ConversationId'
+      - name: messageId
+        in: path
+        required: true
+        description: The unique identifier for the message to be deleted.
+        schema:
+          $ref: '#/components/schemas/MessageId'
+    delete:
+      tags: ["messages"]
+      summary: Delete a specific message
+      description: Deletes a specific message in a conversation using its ID.
+      operationId: deleteMessage
+      security:
+        - PrettyGoodSecurity: []
       responses:
-        '201':
-          description: The message ID of the new message sent in the conversation
+        '204':
+          description: Message successfully deleted. No content is returned.
+        '400':
+          description: Invalid request due to malformed parameters.
           content:
             application/json:
               schema:
-                type: integer
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Invalid conversation or message ID."
         '401':
-          description: Unauthorized - User is not part of the conversation or invalid credentials.
-        '404':
-          description: Conversation not found
-  /conversations/{convid}/{mid}:
-    put:
-      summary: Forward a message to another conversation
-      description: Forwards a message from one conversation to another. The user must be authorized to forward the message.
-      operationId: forwardMessage
-      parameters:
-        - name: convid
-          in: path
-          required: true
-          description: The unique identifier of the conversation where the message is originally from.
-          schema:
-            type: integer
-        - name: mid
-          in: path
-          required: true
-          description: The message ID to forward.
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                id:
-                  type: integer
-                  description: The user ID who is forwarding the message.
-                new_convid:
-                  type: integer
-                  description: The new conversation ID where the message will be forwarded.
-              required:
-                - id
-                - new_convid
-      responses:
-        '200':
-          description: Message successfully forwarded to the new conversation.
-        '401':
-          description: Unauthorized - User is not authorized to forward the message.
+          description: Unauthorized access due to missing or invalid security token.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Unauthorized."
         '404':
           description: Message or conversation not found.
-    delete:
-      summary: Delete a message from a conversation
-      description: Allows a user to delete a message from a conversation. The user must be authorized to delete the message.
-      operationId: deleteMessage
-      parameters:
-        - name: convid
-          in: path
-          required: true
-          description: The unique identifier of the conversation.
-          schema:
-            type: integer
-        - name: mid
-          in: path
-          required: true
-          description: The message ID to be deleted.
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Message successfully deleted.
-        '404':
-          description: Message or conversation not found.
-  /conversations/{convid}/{mid}/comment:
-    put:
-      summary: Add a comment to a message in a conversation
-      description: Allows a user to add a comment to a specific message in a conversation.
-      operationId: commentMessage
-      parameters:
-        - name: convid
-          in: path
-          required: true
-          description: The unique identifier of the conversation.
-          schema:
-            type: integer
-        - name: mid
-          in: path
-          required: true
-          description: The message ID to which the comment will be added.
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                comment:
-                  type: string
-                  description: The comment to be added to the message.
-              required:
-                - comment
-      responses:
-        '200':
-          description: Comment successfully added to the message.
-        '404':
-          description: Message or conversation not found.
-    delete:
-      summary: Delete a comment from a message in a conversation
-      description: Allows a user to delete a comment from a specific message in a conversation.
-      operationId: uncommentMessage
-      parameters:
-        - name: convid
-          in: path
-          required: true
-          description: The unique identifier of the conversation.
-          schema:
-            type: integer
-        - name: mid
-          in: path
-          required: true
-          description: The message ID from which the comment will be deleted.
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Comment successfully deleted from the message.
-        '404':
-          description: Message or conversation not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Message or conversation not found."
+    post:
+     tags: ["messages"]
+     summary: Forward a message in a conversation
+     description: Forwards a specific message to another conversation or user.
+     operationId: forwardMessage
+     requestBody:
+       description: The operation details for forwarding a message.
+       required: true
+       content:
+         application/json:
+           schema:
+             type: object
+             properties:
+               messageId:
+                 $ref: '#/components/schemas/MessageId'
+               targetConversationId:
+                 $ref: '#/components/schemas/ConversationId'
+     security:
+       - PrettyGoodSecurity: []
+     responses:
+       '204':
+         description: Message successfully forwarded.
+       '400':
+         description: Invalid request due to malformed parameters.
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 error:
+                   type: string
+                   example: "Invalid message ID or target conversation ID."
+       '401':
+         description: Unauthorized access due to missing or invalid security token.
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 error:
+                   type: string
+                   example: "Unauthorized."
+       '404':
+         description: Message or target conversation not found.
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 error:
+                   type: string
+                   example: "Message or target conversation not found."
+  /conversations/{convid}/messages/{messageId}/comments:
+   parameters:
+     - name: convid
+       in: path
+       required: true
+       description: The unique identifier for the conversation.
+       schema:
+         $ref: '#/components/schemas/ConversationId'
+     - name: messageId
+       in: path
+       required: true
+       description: The unique identifier for the message to comment on.
+       schema:
+         $ref: '#/components/schemas/MessageId'
+   post:
+     tags: ["messages"]
+     summary: Post a comment on a message
+     description: Allows a user to post a comment on a specific message in a conversation.
+     operationId: commentMessage
+     requestBody:
+       description: The message content to be posted as a comment.
+       required: true
+       content:
+         application/json:
+           schema:
+             $ref: '#/components/schemas/Message'
+     security:
+       - PrettyGoodSecurity: []
+     responses:
+       '204':
+         description: Comment successfully posted.
+       '400':
+         description: Invalid request due to malformed parameters or comment content.
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 error:
+                   type: string
+                   example: "Invalid comment content or parameters."
+       '401':
+         description: Unauthorized access due to missing or invalid security token.
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 error:
+                   type: string
+                   example: "Unauthorized."
+       '404':
+         description: Message or conversation not found.
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 error:
+                   type: string
+                   example: "Message or conversation not found."
+   delete:
+     tags: ["messages"]
+     summary: Remove the comment from a message
+     description: Deletes the single comment associated with the specified message in a conversation.
+     operationId: uncommentMessage
+     security:
+       - PrettyGoodSecurity: []
+     responses:
+       '204':
+         description: Comment successfully deleted. No content is returned.
+       '400':
+         description: Invalid request due to malformed parameters.
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 error:
+                   type: string
+                   example: "Invalid parameters or message doesn't have a comment."
+       '401':
+         description: Unauthorized access due to missing or invalid security token.
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 error:
+                   type: string
+                   example: "Unauthorized."
+       '404':
+         description: Message or comment not found.
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 error:
+                   type: string
+                   example: "Message or comment not found."
   /conversations/{convid}/name:
-    put:
-      summary: Set a new name for a group
-      description: Allows a user to change the name of a group.
-      operationId: setGroupName
-      parameters:
-        - name: convid
-          in: path
-          required: true
-          description: The unique identifier of the group.
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                userid:
-                  type: integer
-                  description: The user ID requesting the change.
-                new_name:
-                  type: string
-                  description: The new name for the conversation.
-              required:
-                - userid
-                - new_name
-      responses:
-        '200':
-          description: Group name successfully updated.
-        '401':
-          description: Unauthorized - User does not have permission to change the group name.
-        '403':
-          description: Forbidden - Not a group.
-        '404':
-          description: Group not found.
+   parameters:
+     - name: convid
+       in: path
+       required: true
+       description: The unique identifier for the conversation (group).
+       schema:
+         $ref: '#/components/schemas/ConversationId'
+   put:
+     tags: ["groups"]
+     summary: Change the group name
+     description: Allows the user to change the name of a conversation (group). The group name may  be unchangeable if it is a simple conversation.
+     operationId: setGroupName
+     requestBody:
+       description: The new name for the conversation (group).
+       required: true
+       content:
+         application/json:
+           schema:
+            type: object
+            properties:
+             groupname:
+              $ref: '#/components/schemas/Username'
+            required:
+              - groupname
+            
+     security:
+       - PrettyGoodSecurity: []
+     responses:
+       '204':
+         description: Group name successfully changed.
+       '400':
+         description: Invalid request, such as invalid parameters or missing name.
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 error:
+                   type: string
+                   example: "Invalid request. Group name is required."
+       '403':
+         description: Forbidden. The group name cannot be changed.
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 error:
+                   type: string
+                   example: "The group name is unchangeable."
+       '404':
+         description: Conversation not found.
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 error:
+                   type: string
+                   example: "Conversation not found."
   /conversations/{convid}/photo:
-    put:
-      summary: Change the photo (GIF) of the conversation
-      description: Allows a user to change the photo (GIF) of a conversation.
-      operationId: setGroupPhoto
-      parameters:
-        - name: convid
-          in: path
-          required: true
-          description: The unique identifier of the conversation.
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                userid:
-                  type: integer
-                  description: The user ID requesting the change.
-                new_photo:
-                  type: string
-                  format: binary
-                  description: The user's new photo in .gif format.
-                  example: "/path/to/photo.gif"
-              required:
-                - userid
-                - new_photo_url
-      responses:
-        '200':
-          description: Group photo (GIF) successfully updated.
-        '401':
-          description: Unauthorized 
-        '403':
-          description: Forbidden - not a group.
-        '404':
-          description: Group not found.
+   parameters:
+     - name: convid
+       in: path
+       required: true
+       description: The unique identifier for the conversation (group).
+       schema:
+         $ref: '#/components/schemas/ConversationId'
+   put:
+     tags: ["groups"]
+     summary: Change the group photo for a conversation
+     description: Allows the user to change the photo (GIF) of a conversation (group).
+     operationId: setGroupPhoto
+     requestBody:
+       description: The new GIF photo for the group conversation.
+       required: true
+       content:
+         image/gif:
+           schema:
+             type: string
+             format: binary
+             description: The new group photo in GIF format.
+     security:
+       - PrettyGoodSecurity: []
+     responses:
+       '204':
+         description: Group photo successfully changed.
+       '400':
+         description: Invalid request, such as missing or invalid photo.
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 error:
+                   type: string
+                   example: "Invalid photo format or missing photo."
+       '403':
+         description: Forbidden. The group photo cannot be changed.
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 error:
+                   type: string
+                   example: "The group photo is unchangeable."
+       '404': 
+         description: Conversation not found.
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 error:
+                   type: string
+                   example: "Conversation not found."
   /conversations/{convid}/members:
+    parameters:
+      - name: convid
+        in: path
+        required: true
+        description: The unique identifier for the conversation (group).
+        schema:
+          $ref: '#/components/schemas/ConversationId'
     put:
-      summary: Add members to a conversation
-      description: Allows a user to add multiple members (user IDs) to a conversation (group).
+      tags: ["groups"]
+      summary: Add user(s) to the group conversation
+      description: Adds one or more user IDs to the conversation's members list.
       operationId: addToGroup
-      parameters:
-        - name: convid
-          in: path
-          required: true
-          description: The unique identifier of the conversation.
-          schema:
-            type: integer
       requestBody:
+        description: The user IDs to be added to the group conversation.
         required: true
         content:
           application/json:
             schema:
               type: object
               properties:
-                user_ids:
+                userIds:
                   type: array
                   items:
-                    type: integer
-                  description: A list of user IDs to be added to the conversation.
+                    $ref: '#/components/schemas/UserId'
+                  description: A list of user IDs to be added to the group.
+                  example: [12, 34]
               required:
-                - user_ids
+                - userIds
+      security:
+        - PrettyGoodSecurity: []
       responses:
-        '200':
-          description: Members successfully added to the conversation.
-        '201':
-          description: New group created.
-    delete:
-      summary: Leave a group
-      description: Allows a user to leave a group
-      operationId: leaveGroup
-      parameters:
-        - name: convid
-          in: path
-          required: true
-          description: The unique identifier of the conversation.
-          schema:
-            type: integer
-        - name: user_id
-          in: query
-          required: true
-          description: The user ID of the member to be removed from the conversation.
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Member successfully removed from the conversation.
-        '401':
-          description: Unauthorized - Invalid credentials or session.
+        '204':
+          description: Users successfully added to the group.
+        '400':
+          description: Invalid request, such as missing or invalid user IDs.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Invalid user IDs."
         '403':
-          description: Forbidden - User does not have permission to remove members from the conversation.
+          description: Forbidden. The user cannot be added to the group.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "User cannot be added to the group due to it being a conversation."
         '404':
-          description: Conversation or user not found.
-          
-          
-          
-###I do not know ho to get rid of the Resolver error l is undefined, it's on my to do list
+          description: Conversation not found or user IDs invalid.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Conversation not found or user ID(s) are invalid."
+    delete:
+     tags: ["groups"]
+     summary: Leave the group conversation
+     description: Allows the user to leave the group conversation. Users can only leave their own  group, not kick others.
+     operationId: leaveGroup
+     security:
+       - PrettyGoodSecurity: []
+     responses:
+       '204':
+         description: Successfully left the group.
+       '403':
+         description: Forbidden. You cannot remove or kick other members, only leave the group  yourself.
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 error:
+                   type: string
+                   example: "You cannot kick members. You can only leave the group."
+       '404':
+         description: Conversation not found or user is not part of the group.
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 error:
+                   type: string
+                   example: "Conversation not found or user is not a member of the group."
+
+
+components: 
+  securitySchemes:
+    PrettyGoodSecurity:
+      type: apiKey
+      in: header
+      name: security_token
+      description: Security token used for authorization.
+  schemas:
+    UserId:
+        type: integer
+        description: The unique identifier for a user.
+        example: 12
+    Username:
+      type: string
+      description: A username with a length between 3 and 16 characters.
+      minLength: 3
+      maxLength: 16
+      pattern: '^.*?$'
+      example: Maria
+    Message:
+      type: string
+      description: A message or a comment.
+      minLength: 1
+      maxLength: 10000
+      pattern: '^.*?$'
+      example: Hello
+    MessageId:
+      type: integer
+      description: The unique identifier for a message.
+      example: 13
+      required:
+        - MessageArray
+        - UserArray
+    ConversationId:
+      type: integer
+      description: The unique identifier for a message.
+      example: 14
