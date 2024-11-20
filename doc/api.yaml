@@ -187,6 +187,16 @@ paths:
                   error:
                     type: string
                     example: "Unauthorized."
+        '404':
+          description: Conversation not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Conversation not found."
   /conversations/{convid}:
     parameters:
      - name: convid
