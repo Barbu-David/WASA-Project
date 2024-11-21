@@ -4,6 +4,19 @@ info:
   description: |
     API for Wasa Text
   version: "1"
+  
+tags:
+- name: login
+  description: Login operation
+- name: user info
+  description: Operations for updating user info
+- name: getting conversations
+  description: Operations for getting conversations
+- name: messages
+  description: Operations related to messages
+- name: groups
+  description: Operations related to groups
+  
 paths:
   /session:
     post:
@@ -21,13 +34,15 @@ paths:
           application/json:
             schema:
               type: object
+              description: The name of the user
               properties:
                 name:
                   type: string
                   example: Maria
-                  pattern: 'ˆ.*?$'
+                  pattern: '^.*?$'
                   minLength: 3
                   maxLength: 16
+                  description: The name must be between 3 and 16 chars.
       responses:
         '201':
           description: User log-in action successful
@@ -35,12 +50,14 @@ paths:
             application/json:
               schema:
                 type: object
+                description: Returns the username and apiKey
                 properties:
                   username:
                    $ref: '#/components/schemas/Username'
                   apiKey:
                    type: string
                    example: "xyz1234567890abcdef"
+                   description: the api key
   /users/{id}/name:
     put:
       tags: ["user info"]
@@ -63,6 +80,7 @@ paths:
           application/json:
             schema:
               type: object
+              description: username 
               properties:
                 username:
                   $ref: '#/components/schemas/Username'
@@ -77,30 +95,36 @@ paths:
             application/json:
               schema:
                 type: object
+                description: response
                 properties:
                   error:
                     type: string
                     example: "Invalid username format."
+                    description: error message
         '401':
           description: Unauthorized access due to missing or invalid security token.
           content:
             application/json:
               schema:
                 type: object
+                description: respone
                 properties:
                   error:
                     type: string
                     example: "Unauthorized."
+                    description: error message
         '404':
           description: User not found.
           content:
             application/json:
               schema:
                 type: object
+                description: response
                 properties:
                   error:
                     type: string
                     example: "User not found."
+                    description: error message
   /users/{id}/photo:
     put:
       tags: ["user info"]
@@ -122,8 +146,11 @@ paths:
         content:
          image/gif:
             schema:
+                description: gif image
                 type: string
                 format: binary
+                minLength: 40
+                maxLength: 10000000
       responses:
         '204':
           description: Successfully updated the photo.
@@ -132,9 +159,11 @@ paths:
           content:
             application/json:
               schema:
+                description: response
                 type: object
                 properties:
                   error:
+                    description: error message
                     type: string
                     example: "Not a gif."
         '401':
@@ -143,18 +172,22 @@ paths:
             application/json:
               schema:
                 type: object
+                description: response
                 properties:
                   error:
                     type: string
                     example: "Unauthorized."
+                    description: error message
         '404':
           description: User not found.
           content:
             application/json:
               schema:
+                description: response
                 type: object
                 properties:
                   error:
+                    description: error message
                     type: string
                     example: "User not found."
   /conversations:
@@ -171,10 +204,14 @@ paths:
           content:
             application/json:
               schema:
+                description: conv id
                 type: object
                 properties:
                   conversations:
+                    description: conv id
                     type: array
+                    minItems: 0
+                    maxItems: 10000
                     items:
                       $ref: '#/components/schemas/ConversationId'
         '401':
@@ -183,20 +220,24 @@ paths:
             application/json:
               schema:
                 type: object
+                description: response
                 properties:
                   error:
                     type: string
                     example: "Unauthorized."
+                    description: error message
         '404':
           description: Conversation not found.
           content:
             application/json:
               schema:
+                description: response
                 type: object
                 properties:
                   error:
                     type: string
                     example: "Conversation not found."
+                    description: error message
   /conversations/{convid}:
     parameters:
      - name: convid
@@ -219,13 +260,20 @@ paths:
             application/json:
               schema:
                 type: object
+                description: response
                 properties:
                   participants:
                     type: array
+                    minItems: 0
+                    maxItems: 10000
+                    description: user id array
                     items:
                       $ref: '#/components/schemas/UserId'
                   messages:
+                    description: message array
                     type: array
+                    minItems: 0
+                    maxItems: 10000
                     items:
                       $ref: '#/components/schemas/MessageId'
         '400':
@@ -234,30 +282,36 @@ paths:
             application/json:
               schema:
                 type: object
+                description: response
                 properties:
                   error:
                     type: string
                     example: "Invalid conversation or message ID."
+                    description: error message
         '401':
           description: Unauthorized access due to missing or invalid security token.
           content:
             application/json:
               schema:
                 type: object
+                description: response
                 properties:
                   error:
                     type: string
                     example: "Unauthorized."
+                    description: error message
         '404':
           description: Conversation not found.
           content:
             application/json:
               schema:
                 type: object
+                description: response
                 properties:
                   error:
                     type: string
                     example: "Conversation not found."
+                    description: error message
     post:
      tags: ["messages"]
      summary: Send a message to a specific conversation
@@ -272,8 +326,11 @@ paths:
             $ref: '#/components/schemas/Message'
         image/gif:
           schema:
+            description: gif image
             type: string
             format: binary
+            minLength: 40
+            maxLength: 10000000
      security:
       - PrettyGoodSecurity: []
      responses:
@@ -284,31 +341,37 @@ paths:
         content:
           application/json:
             schema:
+              description: response
               type: object
               properties:
                 error:
                   type: string
                   example: "Invalid message format."
+                  description: error message
       '401':
         description: Unauthorized access due to missing or invalid security token.
         content:
           application/json:
             schema:
+              description: response
               type: object
               properties:
                 error:
                   type: string
                   example: "Unauthorized."
+                  description: error message
       '404':
         description: Conversation not found.
         content:
           application/json:
             schema:
               type: object
+              description: response
               properties:
                 error:
                   type: string
                   example: "Conversation not found."
+                  description: error message
   /conversations/{convid}/messages/{messageId}:
     parameters:
       - name: convid
@@ -338,31 +401,37 @@ paths:
           content:
             application/json:
               schema:
+                description: response
                 type: object
                 properties:
                   error:
                     type: string
                     example: "Invalid conversation or message ID."
+                    description: error message
         '401':
           description: Unauthorized access due to missing or invalid security token.
           content:
             application/json:
               schema:
+                description: response
                 type: object
                 properties:
                   error:
                     type: string
                     example: "Unauthorized."
+                    description: error message
         '404':
           description: Message or conversation not found.
           content:
             application/json:
               schema:
                 type: object
+                description: response
                 properties:
                   error:
                     type: string
                     example: "Message or conversation not found."
+                    description: error message
     post:
      tags: ["messages"]
      summary: Forward a message in a conversation
@@ -374,6 +443,7 @@ paths:
        content:
          application/json:
            schema:
+             description: an object containing the message and the convo it will be forwarded to
              type: object
              properties:
                messageId:
@@ -391,30 +461,36 @@ paths:
            application/json:
              schema:
                type: object
+               description: response
                properties:
                  error:
                    type: string
                    example: "Invalid message ID or target conversation ID."
+                   description: error message
        '401':
          description: Unauthorized access due to missing or invalid security token.
          content:
            application/json:
              schema:
+               description: response
                type: object
                properties:
                  error:
                    type: string
                    example: "Unauthorized."
+                   description: error message
        '404':
          description: Message or target conversation not found.
          content:
            application/json:
              schema:
                type: object
+               description: response
                properties:
                  error:
                    type: string
                    example: "Message or target conversation not found."
+                   description: error message
   /conversations/{convid}/messages/{messageId}/comments:
    parameters:
      - name: convid
@@ -451,31 +527,37 @@ paths:
          content:
            application/json:
              schema:
+               description: response
                type: object
                properties:
                  error:
                    type: string
                    example: "Invalid comment content or parameters."
+                   description: error message
        '401':
          description: Unauthorized access due to missing or invalid security token.
          content:
            application/json:
              schema:
                type: object
+               description: response
                properties:
                  error:
                    type: string
                    example: "Unauthorized."
+                   description: error message
        '404':
          description: Message or conversation not found.
          content:
            application/json:
              schema:
+               description: response
                type: object
                properties:
                  error:
                    type: string
                    example: "Message or conversation not found."
+                   description: error message
    delete:
      tags: ["messages"]
      summary: Remove the comment from a message
@@ -491,9 +573,11 @@ paths:
          content:
            application/json:
              schema:
+               description: response
                type: object
                properties:
                  error:
+                   description: error message
                    type: string
                    example: "Invalid parameters or message doesn't have a comment."
        '401':
@@ -502,9 +586,11 @@ paths:
            application/json:
              schema:
                type: object
+               description: response
                properties:
                  error:
                    type: string
+                   description: error message
                    example: "Unauthorized."
        '404':
          description: Message or comment not found.
@@ -512,9 +598,11 @@ paths:
            application/json:
              schema:
                type: object
+               description: response
                properties:
                  error:
                    type: string
+                   description: error message
                    example: "Message or comment not found."
   /conversations/{convid}/name:
    parameters:
@@ -535,6 +623,7 @@ paths:
        content:
          application/json:
            schema:
+            description: new name
             type: object
             properties:
              groupname:
@@ -552,10 +641,12 @@ paths:
          content:
            application/json:
              schema:
+               description: response
                type: object
                properties:
                  error:
                    type: string
+                   description: error message
                    example: "Invalid request. Group name is required."
        '403':
          description: Forbidden. The group name cannot be changed.
@@ -563,9 +654,11 @@ paths:
            application/json:
              schema:
                type: object
+               description: response
                properties:
                  error:
                    type: string
+                   description: error message
                    example: "The group name is unchangeable."
        '404':
          description: Conversation not found.
@@ -573,9 +666,11 @@ paths:
            application/json:
              schema:
                type: object
+               description: response
                properties:
                  error:
                    type: string
+                   description: error message
                    example: "Conversation not found."
   /conversations/{convid}/photo:
    parameters:
@@ -599,6 +694,8 @@ paths:
              type: string
              format: binary
              description: The new group photo in GIF format.
+             minLength: 40
+             maxLength: 10000000
      security:
        - PrettyGoodSecurity: []
      responses:
@@ -609,10 +706,12 @@ paths:
          content:
            application/json:
              schema:
+               description: response
                type: object
                properties:
                  error:
                    type: string
+                   description: error message
                    example: "Invalid photo format or missing photo."
        '403':
          description: Forbidden. The group photo cannot be changed.
@@ -620,9 +719,11 @@ paths:
            application/json:
              schema:
                type: object
+               description: response
                properties:
                  error:
                    type: string
+                   description: error message
                    example: "The group photo is unchangeable."
        '404': 
          description: Conversation not found.
@@ -630,9 +731,11 @@ paths:
            application/json:
              schema:
                type: object
+               description: response
                properties:
                  error:
                    type: string
+                   description: error message
                    example: "Conversation not found."
   /conversations/{convid}/members:
     parameters:
@@ -653,10 +756,13 @@ paths:
         content:
           application/json:
             schema:
+              description: list of users to be added to the group
               type: object
               properties:
                 userIds:
                   type: array
+                  minItems: 0
+                  maxItems: 10000
                   items:
                     $ref: '#/components/schemas/UserId'
                   description: A list of user IDs to be added to the group.
@@ -674,9 +780,11 @@ paths:
             application/json:
               schema:
                 type: object
+                description: response
                 properties:
                   error:
                     type: string
+                    description: error message
                     example: "Invalid user IDs."
         '403':
           description: Forbidden. The user cannot be added to the group.
@@ -684,9 +792,11 @@ paths:
             application/json:
               schema:
                 type: object
+                description: response
                 properties:
                   error:
                     type: string
+                    description: error message
                     example: "User cannot be added to the group due to it being a conversation."
         '404':
           description: Conversation not found or user IDs invalid.
@@ -694,9 +804,11 @@ paths:
             application/json:
               schema:
                 type: object
+                description: response
                 properties:
                   error:
                     type: string
+                    description: error message
                     example: "Conversation not found or user ID(s) are invalid."
     delete:
      tags: ["groups"]
@@ -713,10 +825,12 @@ paths:
          content:
            application/json:
              schema:
+               description: response
                type: object
                properties:
                  error:
                    type: string
+                   description: error message
                    example: "You cannot kick members. You can only leave the group."
        '404':
          description: Conversation not found or user is not part of the group.
@@ -724,9 +838,11 @@ paths:
            application/json:
              schema:
                type: object
+               description: response
                properties:
                  error:
                    type: string
+                   description: error message
                    example: "Conversation not found or user is not a member of the group."
 
 
@@ -760,9 +876,6 @@ components:
       type: integer
       description: The unique identifier for a message.
       example: 13
-      required:
-        - MessageArray
-        - UserArray
     ConversationId:
       type: integer
       description: The unique identifier for a message.
