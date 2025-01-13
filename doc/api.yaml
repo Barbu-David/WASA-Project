@@ -1,8 +1,7 @@
 openapi: 3.0.3
 info:
   title: WASA Text
-  description: |
-    API for Wasa Text
+  description: API WASA TEXT
   version: "1"
   
 tags:
@@ -59,6 +58,13 @@ paths:
                    example: "xyz1234567890abcdef"
                    description: the api key
   /users/{id}/name:
+    parameters:
+     - name: id
+       in: path
+       required: true  
+       description: The unique identifier for a user.
+       schema:
+        $ref: '#/components/schemas/UserId'
     put:
       tags: ["user info"]
       summary: Update a user's name
@@ -66,26 +72,13 @@ paths:
       operationId: setMyUserName 
       security:
         - PrettyGoodSecurity: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: The unique identifier for a user.
-          schema:
-            $ref: '#/components/schemas/UserId'
       requestBody:
         description: The new username to be assigned to the user.
         required: true
         content:
           application/json:
             schema:
-              type: object
-              description: username 
-              properties:
-                username:
-                  $ref: '#/components/schemas/Username'
-              required:
-                - username
+              $ref: '#/components/schemas/Username'
       responses:
         '204':
           description: Successfully updated the username.
@@ -94,38 +87,57 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                description: response
-                properties:
-                  error:
-                    type: string
-                    example: "Invalid username format."
-                    description: error message
+                $ref: '#/components/schemas/ErrorMessage'
         '401':
           description: Unauthorized access due to missing or invalid security token.
           content:
             application/json:
               schema:
-                type: object
-                description: respone
-                properties:
-                  error:
-                    type: string
-                    example: "Unauthorized."
-                    description: error message
+                $ref: '#/components/schemas/ErrorMessage'
         '404':
           description: User not found.
           content:
             application/json:
               schema:
-                type: object
-                description: response
-                properties:
-                  error:
-                    type: string
-                    example: "User not found."
-                    description: error message
+                $ref: '#/components/schemas/ErrorMessage'
+    get:
+      tags: ["user info"]
+      summary: Get a user's name
+      description: Get the name for a user identified by their unique ID.
+      operationId: getMyName
+      responses:
+        '200':
+          description: Successfully got the photo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Username'
+        '400':
+          description: Invalid input or parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '401':
+          description: Unauthorized access due to missing or invalid security token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '404':
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
   /users/{id}/photo:
+    parameters:
+     - name: id
+       in: path
+       required: true
+       description: The unique identifier for a user.
+       schema:
+        $ref: '#/components/schemas/UserId'
     put:
       tags: ["user info"]
       summary: Update a user's photo
@@ -133,24 +145,13 @@ paths:
       operationId: setMyPhoto
       security:
         - PrettyGoodSecurity: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: The unique identifier for a user.
-          schema:
-            $ref: '#/components/schemas/UserId'
       requestBody:
         description: The new photo to be assigned to the user.
         required: true
         content:
          image/gif:
             schema:
-                description: gif image
-                type: string
-                format: binary
-                minLength: 40
-                maxLength: 10000000
+              $ref: '#/components/schemas/GIFimage'
       responses:
         '204':
           description: Successfully updated the photo.
@@ -159,37 +160,49 @@ paths:
           content:
             application/json:
               schema:
-                description: response
-                type: object
-                properties:
-                  error:
-                    description: error message
-                    type: string
-                    example: "Not a gif."
+                $ref: '#/components/schemas/ErrorMessage'
         '401':
           description: Unauthorized access due to missing or invalid security token.
           content:
             application/json:
               schema:
-                type: object
-                description: response
-                properties:
-                  error:
-                    type: string
-                    example: "Unauthorized."
-                    description: error message
+                $ref: '#/components/schemas/ErrorMessage'
         '404':
           description: User not found.
           content:
             application/json:
               schema:
-                description: response
-                type: object
-                properties:
-                  error:
-                    description: error message
-                    type: string
-                    example: "User not found."
+                $ref: '#/components/schemas/ErrorMessage'
+    get:
+      tags: ["user info"]
+      summary: Get a user's photo
+      description: Get the photo for a user identified by their unique ID.
+      operationId: getMyPhoto
+      responses:
+        '200':
+          description: Successfully got the photo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GIFimage'
+        '400':
+          description: Invalid input or parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '401':
+          description: Unauthorized access due to missing or invalid security token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '404':
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
   /conversations:
     get:
       tags: ["getting conversations"]
@@ -208,7 +221,7 @@ paths:
                 type: object
                 properties:
                   conversations:
-                    description: conv id
+                    description: conv ids
                     type: array
                     minItems: 0
                     maxItems: 10000
@@ -219,25 +232,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                description: response
-                properties:
-                  error:
-                    type: string
-                    example: "Unauthorized."
-                    description: error message
-        '404':
-          description: Conversation not found.
-          content:
-            application/json:
-              schema:
-                description: response
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Conversation not found."
-                    description: error message
+                $ref: '#/components/schemas/ErrorMessage'
   /conversations/{convid}:
     parameters:
      - name: convid
@@ -281,37 +276,19 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                description: response
-                properties:
-                  error:
-                    type: string
-                    example: "Invalid conversation or message ID."
-                    description: error message
+                $ref: '#/components/schemas/ErrorMessage'
         '401':
           description: Unauthorized access due to missing or invalid security token.
           content:
             application/json:
               schema:
-                type: object
-                description: response
-                properties:
-                  error:
-                    type: string
-                    example: "Unauthorized."
-                    description: error message
+                $ref: '#/components/schemas/ErrorMessage'
         '404':
           description: Conversation not found.
           content:
             application/json:
               schema:
-                type: object
-                description: response
-                properties:
-                  error:
-                    type: string
-                    example: "Conversation not found."
-                    description: error message
+                $ref: '#/components/schemas/ErrorMessage'
     post:
      tags: ["messages"]
      summary: Send a message to a specific conversation
@@ -323,14 +300,10 @@ paths:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Message'
+            $ref: '#/components/schemas/MessageString'
         image/gif:
           schema:
-            description: gif image
-            type: string
-            format: binary
-            minLength: 40
-            maxLength: 10000000
+            $ref: '#/components/schemas/GIFimage'
      security:
       - PrettyGoodSecurity: []
      responses:
@@ -341,37 +314,19 @@ paths:
         content:
           application/json:
             schema:
-              description: response
-              type: object
-              properties:
-                error:
-                  type: string
-                  example: "Invalid message format."
-                  description: error message
+              $ref: '#/components/schemas/ErrorMessage'
       '401':
         description: Unauthorized access due to missing or invalid security token.
         content:
           application/json:
             schema:
-              description: response
-              type: object
-              properties:
-                error:
-                  type: string
-                  example: "Unauthorized."
-                  description: error message
+              $ref: '#/components/schemas/ErrorMessage'
       '404':
         description: Conversation not found.
         content:
           application/json:
             schema:
-              type: object
-              description: response
-              properties:
-                error:
-                  type: string
-                  example: "Conversation not found."
-                  description: error message
+              $ref: '#/components/schemas/ErrorMessage'
   /conversations/{convid}/messages/{messageId}:
     parameters:
       - name: convid
@@ -401,37 +356,19 @@ paths:
           content:
             application/json:
               schema:
-                description: response
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Invalid conversation or message ID."
-                    description: error message
+                $ref: '#/components/schemas/ErrorMessage'
         '401':
           description: Unauthorized access due to missing or invalid security token.
           content:
             application/json:
               schema:
-                description: response
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Unauthorized."
-                    description: error message
+                $ref: '#/components/schemas/ErrorMessage'
         '404':
           description: Message or conversation not found.
           content:
             application/json:
               schema:
-                type: object
-                description: response
-                properties:
-                  error:
-                    type: string
-                    example: "Message or conversation not found."
-                    description: error message
+                $ref: '#/components/schemas/ErrorMessage'
     post:
      tags: ["messages"]
      summary: Forward a message in a conversation
@@ -460,37 +397,77 @@ paths:
          content:
            application/json:
              schema:
-               type: object
-               description: response
-               properties:
-                 error:
-                   type: string
-                   example: "Invalid message ID or target conversation ID."
-                   description: error message
+               $ref: '#/components/schemas/ErrorMessage'
        '401':
          description: Unauthorized access due to missing or invalid security token.
          content:
            application/json:
              schema:
-               description: response
-               type: object
-               properties:
-                 error:
-                   type: string
-                   example: "Unauthorized."
-                   description: error message
+               $ref: '#/components/schemas/ErrorMessage'
        '404':
          description: Message or target conversation not found.
          content:
            application/json:
              schema:
-               type: object
-               description: response
-               properties:
-                 error:
-                   type: string
-                   example: "Message or target conversation not found."
-                   description: error message
+               $ref: '#/components/schemas/ErrorMessage'
+    get:
+     tags: ["messages"]
+     summary: Get a message in a conversation
+     description: Gets a specific message contents.
+     operationId: getMessage
+     responses:
+       '200':
+         description: Message successfully forwarded.
+         content:
+          application/json:
+           schema:
+            type: object
+            description: The retrieved message
+            properties:
+               stringContent:
+                $ref: '#/components/schemas/MessageString'
+               gifContent:
+                $ref: '#/components/schemas/MessageString'
+               senderId:
+                $ref: '#/components/schemas/UserId'
+               timestamp:
+                type: string
+                format: date-time
+                description: The time the message was sent.
+                example: "2024-11-27T10:00:00Z"
+               seen:
+                 type: array
+                 minItems: 0
+                 maxItems: 10000
+                 description: user id that saw the message
+                 items:
+                  $ref: '#/components/schemas/UserId'
+               forwarded:
+                type: boolean
+                description: "True if the message is forwarded"
+               photoContent:
+                type: boolean
+                description: "True if the message is a photo"
+               comment:
+                 $ref: '#/components/schemas/MessageString'
+       '400':
+         description: Invalid request due to malformed parameters.
+         content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/ErrorMessage'
+       '401':
+         description: Unauthorized access due to missing or invalid security token.
+         content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/ErrorMessage'
+       '404':
+         description: Message or target conversation not found.
+         content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/ErrorMessage'
   /conversations/{convid}/messages/{messageId}/comments:
    parameters:
      - name: convid
@@ -516,7 +493,7 @@ paths:
        content:
          application/json:
            schema:
-             $ref: '#/components/schemas/Message'
+             $ref: '#/components/schemas/MessageString'
      security:
        - PrettyGoodSecurity: []
      responses:
@@ -527,37 +504,19 @@ paths:
          content:
            application/json:
              schema:
-               description: response
-               type: object
-               properties:
-                 error:
-                   type: string
-                   example: "Invalid comment content or parameters."
-                   description: error message
+               $ref: '#/components/schemas/ErrorMessage'
        '401':
          description: Unauthorized access due to missing or invalid security token.
          content:
            application/json:
              schema:
-               type: object
-               description: response
-               properties:
-                 error:
-                   type: string
-                   example: "Unauthorized."
-                   description: error message
+               $ref: '#/components/schemas/ErrorMessage'
        '404':
          description: Message or conversation not found.
          content:
            application/json:
              schema:
-               description: response
-               type: object
-               properties:
-                 error:
-                   type: string
-                   example: "Message or conversation not found."
-                   description: error message
+               $ref: '#/components/schemas/ErrorMessage'
    delete:
      tags: ["messages"]
      summary: Remove the comment from a message
@@ -573,37 +532,65 @@ paths:
          content:
            application/json:
              schema:
-               description: response
-               type: object
-               properties:
-                 error:
-                   description: error message
-                   type: string
-                   example: "Invalid parameters or message doesn't have a comment."
+               $ref: '#/components/schemas/ErrorMessage'
        '401':
          description: Unauthorized access due to missing or invalid security token.
          content:
            application/json:
              schema:
-               type: object
-               description: response
-               properties:
-                 error:
-                   type: string
-                   description: error message
-                   example: "Unauthorized."
+               $ref: '#/components/schemas/ErrorMessage'
        '404':
          description: Message or comment not found.
          content:
            application/json:
              schema:
-               type: object
-               description: response
-               properties:
-                 error:
-                   type: string
-                   description: error message
-                   example: "Message or comment not found."
+               $ref: '#/components/schemas/ErrorMessage'
+  /conversations/{convid}/messages/{messageId}/photo:
+   parameters:
+     - name: convid
+       in: path
+       required: true
+       description: The unique identifier for the conversation.
+       schema:
+         $ref: '#/components/schemas/ConversationId'
+     - name: messageId
+       in: path
+       required: true
+       description: The unique identifier for the message to comment on.
+       schema:
+         $ref: '#/components/schemas/MessageId'
+   get:
+     tags: ["messages"]
+     summary: Get a message photo
+     description: Retrieve message photo
+     operationId: getMessagePhoto
+     security:
+       - PrettyGoodSecurity: []
+     responses:
+       '200':
+          description: Successfully got the photo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GIFimage'
+       '400':
+         description: Invalid request due to malformed parameters.
+         content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/ErrorMessage'
+       '401':
+         description: Unauthorized access due to missing or invalid security token.
+         content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/ErrorMessage'
+       '404':
+         description: Message or conversation not found.
+         content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/ErrorMessage'
   /conversations/{convid}/name:
    parameters:
      - name: convid
@@ -623,14 +610,7 @@ paths:
        content:
          application/json:
            schema:
-            description: new name
-            type: object
-            properties:
-             groupname:
               $ref: '#/components/schemas/Username'
-            required:
-              - groupname
-            
      security:
        - PrettyGoodSecurity: []
      responses:
@@ -641,37 +621,57 @@ paths:
          content:
            application/json:
              schema:
-               description: response
-               type: object
-               properties:
-                 error:
-                   type: string
-                   description: error message
-                   example: "Invalid request. Group name is required."
+               $ref: '#/components/schemas/ErrorMessage'
+       '401':
+         description: Missing or invalid security token.
+         content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/ErrorMessage'
        '403':
          description: Forbidden. The group name cannot be changed.
          content:
            application/json:
              schema:
-               type: object
-               description: response
-               properties:
-                 error:
-                   type: string
-                   description: error message
-                   example: "The group name is unchangeable."
+               $ref: '#/components/schemas/ErrorMessage'
        '404':
          description: Conversation not found.
          content:
            application/json:
              schema:
-               type: object
-               description: response
-               properties:
-                 error:
-                   type: string
-                   description: error message
-                   example: "Conversation not found."
+               $ref: '#/components/schemas/ErrorMessage'
+   get:
+     tags: ["groups"]
+     summary: Get the group name for a conversation
+     description: Allows the user to get the name of a conversation (group).
+     operationId: getGroupName
+     security:
+       - PrettyGoodSecurity: []
+     responses:
+       '200':
+         description: Group photo successfully retrieved.
+         content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Username'
+       '400':
+         description: Invalid request, such as missing or invalid photo.
+         content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/ErrorMessage'
+       '401':
+         description: Missing or invalid security token.
+         content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/ErrorMessage'
+       '404': 
+         description: Conversation not found.
+         content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/ErrorMessage'
   /conversations/{convid}/photo:
    parameters:
      - name: convid
@@ -691,11 +691,7 @@ paths:
        content:
          image/gif:
            schema:
-             type: string
-             format: binary
-             description: The new group photo in GIF format.
-             minLength: 40
-             maxLength: 10000000
+            $ref: '#/components/schemas/GIFimage'
      security:
        - PrettyGoodSecurity: []
      responses:
@@ -706,37 +702,57 @@ paths:
          content:
            application/json:
              schema:
-               description: response
-               type: object
-               properties:
-                 error:
-                   type: string
-                   description: error message
-                   example: "Invalid photo format or missing photo."
+               $ref: '#/components/schemas/ErrorMessage'
+       '401':
+         description: Missing or invalid security token.
+         content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/ErrorMessage'
        '403':
          description: Forbidden. The group photo cannot be changed.
          content:
            application/json:
              schema:
-               type: object
-               description: response
-               properties:
-                 error:
-                   type: string
-                   description: error message
-                   example: "The group photo is unchangeable."
+               $ref: '#/components/schemas/ErrorMessage'
        '404': 
          description: Conversation not found.
          content:
            application/json:
              schema:
-               type: object
-               description: response
-               properties:
-                 error:
-                   type: string
-                   description: error message
-                   example: "Conversation not found."
+               $ref: '#/components/schemas/ErrorMessage'
+   get:
+     tags: ["groups"]
+     summary: Get the group photo for a conversation
+     description: Allows the user to get the photo (GIF) of a conversation (group).
+     operationId: getGroupPhoto
+     security:
+       - PrettyGoodSecurity: []
+     responses:
+       '200':
+         description: Group photo successfully retrieved.
+         content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GIFimage'
+       '400':
+         description: Invalid request, such as missing or invalid photo.
+         content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/ErrorMessage'
+       '401':
+         description: Missing or invalid security token.
+         content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/ErrorMessage'
+       '404': 
+         description: Conversation not found.
+         content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/ErrorMessage'
   /conversations/{convid}/members:
     parameters:
       - name: convid
@@ -779,37 +795,25 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                description: response
-                properties:
-                  error:
-                    type: string
-                    description: error message
-                    example: "Invalid user IDs."
+                $ref: '#/components/schemas/ErrorMessage'
+        '401':
+         description: Missing or invalid security token.
+         content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/ErrorMessage'
         '403':
           description: Forbidden. The user cannot be added to the group.
           content:
             application/json:
               schema:
-                type: object
-                description: response
-                properties:
-                  error:
-                    type: string
-                    description: error message
-                    example: "User cannot be added to the group due to it being a conversation."
+               $ref: '#/components/schemas/ErrorMessage'
         '404':
           description: Conversation not found or user IDs invalid.
           content:
             application/json:
               schema:
-                type: object
-                description: response
-                properties:
-                  error:
-                    type: string
-                    description: error message
-                    example: "Conversation not found or user ID(s) are invalid."
+                $ref: '#/components/schemas/ErrorMessage'
     delete:
      tags: ["groups"]
      summary: Leave the group conversation
@@ -820,31 +824,24 @@ paths:
      responses:
        '204':
          description: Successfully left the group.
-       '403':
-         description: Forbidden. You cannot remove or kick other members, only leave the group  yourself.
+       '401':
+         description: Missing or invalid security token.
          content:
            application/json:
              schema:
-               description: response
-               type: object
-               properties:
-                 error:
-                   type: string
-                   description: error message
-                   example: "You cannot kick members. You can only leave the group."
+               $ref: '#/components/schemas/ErrorMessage'
+       '403':
+         description: Forbidden. You cannot remove or kick other members, only leave the group  yourself. You can only leave groups.
+         content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/ErrorMessage'
        '404':
          description: Conversation not found or user is not part of the group.
          content:
            application/json:
              schema:
-               type: object
-               description: response
-               properties:
-                 error:
-                   type: string
-                   description: error message
-                   example: "Conversation not found or user is not a member of the group."
-
+              $ref: '#/components/schemas/ErrorMessage'
 
 components: 
   securitySchemes:
@@ -865,7 +862,7 @@ components:
       maxLength: 16
       pattern: '^.*?$'
       example: Maria
-    Message:
+    MessageString:
       type: string
       description: A message or a comment.
       minLength: 1
@@ -880,3 +877,16 @@ components:
       type: integer
       description: The unique identifier for a message.
       example: 14
+    ErrorMessage:
+      type: string
+      pattern: '^.*?$'
+      example: Error
+      minLength: 1
+      maxLength: 10000
+      description: Error Message
+    GIFimage:
+      description: gif image
+      type: string
+      format: binary
+      minLength: 40
+      maxLength: 10000000
