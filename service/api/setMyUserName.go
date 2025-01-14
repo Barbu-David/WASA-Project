@@ -8,11 +8,5 @@ import (
 //		"time"
        )
 
-/*
-func DoSecurity(tokenStr string) (*User, string, int){
-
-
-}
-*/
 func (rt *_router) setMyUserName(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}

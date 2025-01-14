@@ -12,16 +12,16 @@ type AppDatabase interface {
 	Ping() error
 
 	GetUserIDBySecurityKey(securityKey string) (int, error)
-
-	UpdateUserPhoto(userID int, photo *gif.GIF) error
-
+/*
 	UpdateUserName(userID int, name string) error
+	
+	UpdateUserPhoto(userID int, photo *gif.GIF) error
 
 	GetConversationsByUserID(userID int) ([]int, error)
 
 	GetMessageIDsByConversationID(convID int) ([]int, error)
 
-	AddMessageToConversation(convID int, message Message) (int, error) // Returns the new message ID
+	AddMessageToConversation(convID int, message Message) (int, error)
 
 	DeleteMessageFromConversation(convID int, messageID int) error
 
@@ -40,8 +40,13 @@ type AppDatabase interface {
 	GetConversationPhotoByUserID(userID int, convID int) (*gif.GIF, error)
 
 	AddUserToConversation(convID int, userID int) error
-		
+
 	RemoveUserFromConversation(convID int, userID int) error
+*/
+	CheckIfUserExists(username string) (bool, error)
+
+	AddNewUser(username string, securityKey string) (int, error) 
+
 }
 
 type User struct {
@@ -52,10 +57,11 @@ type User struct {
 }
 
 type Message struct {
+	ID           int
 	Content      string
 	GifPhoto     *gif.GIF
 	SenderID     int
-	Checkmark    string // Possible values: "seen", "delivered", "unseen"
+	Checkmark    string 
 	Timestamp    time.Time
 }
 
@@ -63,8 +69,7 @@ type Conversation struct {
 	ID           int
 	Name         string
 	GifPhoto     *gif.GIF
-	Members      []int       // List of user IDs
-	Messages     []Message
+	Members      []int   
 }
 
 type appdbimpl struct {
@@ -76,27 +81,49 @@ func New(db *sql.DB) (AppDatabase, error) {
 		return nil, errors.New("database is required when building an AppDatabase")
 	}
 
-	// Create Users table
 	usersTableStmt := `CREATE TABLE IF NOT EXISTS Users (
 		id INTEGER NOT NULL PRIMARY KEY,
 		username TEXT NOT NULL,
 		security_key TEXT NOT NULL,
-		gif_photo TEXT
+		gif_photo BLOB
 	);`
 	if _, err := db.Exec(usersTableStmt); err != nil {
 		return nil, fmt.Errorf("error creating Users table: %w", err)
 	}
 
-	// Create Conversations table
 	conversationsTableStmt := `CREATE TABLE IF NOT EXISTS Conversations (
 		id INTEGER NOT NULL PRIMARY KEY,
 		name TEXT NOT NULL,
-		gif_photo TEXT,
-		member_list TEXT NOT NULL,
-		message_list TEXT
+		gif_photo BLOB
 	);`
 	if _, err := db.Exec(conversationsTableStmt); err != nil {
 		return nil, fmt.Errorf("error creating Conversations table: %w", err)
+	}
+
+	conversationMembersStmt := `CREATE TABLE IF NOT EXISTS ConversationMembers (
+		conv_id INTEGER NOT NULL,
+		user_id INTEGER NOT NULL,
+		PRIMARY KEY (conv_id, user_id),
+		FOREIGN KEY (conv_id) REFERENCES Conversations(id),
+		FOREIGN KEY (user_id) REFERENCES Users(id)
+	);`
+	if _, err := db.Exec(conversationMembersStmt); err != nil {
+		return nil, fmt.Errorf("error creating ConversationMembers table: %w", err)
+	}
+
+	messagesTableStmt := `CREATE TABLE IF NOT EXISTS Messages (
+		id INTEGER NOT NULL PRIMARY KEY,
+		conv_id INTEGER NOT NULL,
+		content TEXT,
+		gif_photo BLOB,
+		sender_id INTEGER NOT NULL,
+		checkmark TEXT NOT NULL,
+		timestamp DATETIME NOT NULL,
+		FOREIGN KEY (conv_id) REFERENCES Conversations(id),
+		FOREIGN KEY (sender_id) REFERENCES Users(id)
+	);`
+	if _, err := db.Exec(messagesTableStmt); err != nil {
+		return nil, fmt.Errorf("error creating Messages table: %w", err)
 	}
 
 	return &appdbimpl{
