@@ -10,9 +10,9 @@ import (
 
 type AppDatabase interface {
 	Ping() error
-
-	GetUserIDBySecurityKey(securityKey string) (int, error)
 /*
+	GetUserIDBySecurityKey(securityKey string) (int, error)
+
 	UpdateUserName(userID int, name string) error
 	
 	UpdateUserPhoto(userID int, photo *gif.GIF) error

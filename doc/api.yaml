@@ -570,7 +570,7 @@ paths:
        '200':
           description: Successfully got the photo.
           content:
-            application/json:
+            image/gif:
               schema:
                 $ref: '#/components/schemas/GIFimage'
        '400':
