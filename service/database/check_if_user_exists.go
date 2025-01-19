@@ -11,5 +11,3 @@ func (db *appdbimpl) CheckIfUserExists(username string) (bool, error) {
 	}
 	return count > 0, nil
 }
-
-

@@ -10,4 +10,3 @@ func (db *appdbimpl) AddNewUser(username string, securityKey string) (int, error
 	id, err := res.LastInsertId()
 	return int(id), err
 }
-
