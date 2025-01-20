@@ -57,6 +57,9 @@ paths:
                    type: string
                    example: "xyz1234567890abcdef"
                    description: the api key
+                  userID:
+                    $ref: '#/components/schemas/UserId'
+                   
         '400':
           description: Invalid input or parameters.
           content:
