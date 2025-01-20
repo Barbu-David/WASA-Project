@@ -57,6 +57,20 @@ paths:
                    type: string
                    example: "xyz1234567890abcdef"
                    description: the api key
+        '400':
+          description: Invalid input or parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        
+  
   /users/{id}/name:
     parameters:
      - name: id
@@ -100,6 +114,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorMessage'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
     get:
       tags: ["user info"]
       summary: Get a user's name
@@ -126,6 +146,12 @@ paths:
                 $ref: '#/components/schemas/ErrorMessage'
         '404':
           description: User not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '500':
+          description: Internal server error
           content:
             application/json:
               schema:
@@ -173,6 +199,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorMessage'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
     get:
       tags: ["user info"]
       summary: Get a user's photo
@@ -182,7 +214,7 @@ paths:
         '200':
           description: Successfully got the photo.
           content:
-            application/json:
+            image/gif:
               schema:
                 $ref: '#/components/schemas/GIFimage'
         '400':
@@ -199,6 +231,12 @@ paths:
                 $ref: '#/components/schemas/ErrorMessage'
         '404':
           description: User not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '500':
+          description: Internal server error
           content:
             application/json:
               schema:
@@ -233,6 +271,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorMessage'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        
   /conversations/{convid}:
     parameters:
      - name: convid
@@ -289,6 +334,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorMessage'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
     post:
      tags: ["messages"]
      summary: Send a message to a specific conversation
@@ -327,6 +378,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ErrorMessage'
+      '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
   /conversations/{convid}/messages/{messageId}:
     parameters:
       - name: convid
@@ -365,6 +422,12 @@ paths:
                 $ref: '#/components/schemas/ErrorMessage'
         '404':
           description: Message or conversation not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '500':
+          description: Internal server error
           content:
             application/json:
               schema:
@@ -410,6 +473,12 @@ paths:
            application/json:
              schema:
                $ref: '#/components/schemas/ErrorMessage'
+       '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
     get:
      tags: ["messages"]
      summary: Get a message in a conversation
@@ -425,8 +494,6 @@ paths:
             description: The retrieved message
             properties:
                stringContent:
-                $ref: '#/components/schemas/MessageString'
-               gifContent:
                 $ref: '#/components/schemas/MessageString'
                senderId:
                 $ref: '#/components/schemas/UserId'
@@ -468,6 +535,12 @@ paths:
            application/json:
              schema:
                $ref: '#/components/schemas/ErrorMessage'
+       '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
   /conversations/{convid}/messages/{messageId}/comments:
    parameters:
      - name: convid
@@ -517,6 +590,12 @@ paths:
            application/json:
              schema:
                $ref: '#/components/schemas/ErrorMessage'
+       '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
    delete:
      tags: ["messages"]
      summary: Remove the comment from a message
@@ -545,6 +624,12 @@ paths:
            application/json:
              schema:
                $ref: '#/components/schemas/ErrorMessage'
+       '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
   /conversations/{convid}/messages/{messageId}/photo:
    parameters:
      - name: convid
@@ -591,6 +676,12 @@ paths:
            application/json:
              schema:
                $ref: '#/components/schemas/ErrorMessage'
+       '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
   /conversations/{convid}/name:
    parameters:
      - name: convid
@@ -640,6 +731,12 @@ paths:
            application/json:
              schema:
                $ref: '#/components/schemas/ErrorMessage'
+       '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
    get:
      tags: ["groups"]
      summary: Get the group name for a conversation
@@ -672,6 +769,12 @@ paths:
            application/json:
              schema:
                $ref: '#/components/schemas/ErrorMessage'
+       '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
   /conversations/{convid}/photo:
    parameters:
      - name: convid
@@ -721,6 +824,12 @@ paths:
            application/json:
              schema:
                $ref: '#/components/schemas/ErrorMessage'
+       '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
    get:
      tags: ["groups"]
      summary: Get the group photo for a conversation
@@ -732,7 +841,7 @@ paths:
        '200':
          description: Group photo successfully retrieved.
          content:
-            application/json:
+           image/gif:
               schema:
                 $ref: '#/components/schemas/GIFimage'
        '400':
@@ -753,6 +862,12 @@ paths:
            application/json:
              schema:
                $ref: '#/components/schemas/ErrorMessage'
+       '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
   /conversations/{convid}/members:
     parameters:
       - name: convid
@@ -814,6 +929,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorMessage'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
     delete:
      tags: ["groups"]
      summary: Leave the group conversation
@@ -842,7 +963,12 @@ paths:
            application/json:
              schema:
               $ref: '#/components/schemas/ErrorMessage'
-
+       '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
 components: 
   securitySchemes:
     PrettyGoodSecurity:

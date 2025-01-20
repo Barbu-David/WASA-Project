@@ -10,39 +10,7 @@ import (
 
 type AppDatabase interface {
 	Ping() error
-	/*
-		GetUserIDBySecurityKey(securityKey string) (int, error)
-
-		UpdateUserName(userID int, name string) error
-
-		UpdateUserPhoto(userID int, photo *gif.GIF) error
-
-		GetConversationsByUserID(userID int) ([]int, error)
-
-		GetMessageIDsByConversationID(convID int) ([]int, error)
-
-		AddMessageToConversation(convID int, message Message) (int, error)
-
-		DeleteMessageFromConversation(convID int, messageID int) error
-
-		AddCommentToMessage(convID int, messageID int, comment string) error
-
-		RemoveCommentFromMessage(convID int, messageID int) error
-
-		SetConversationName(convID int, userID int, name string) error
-
-		SetConversationPhoto(convID int, userID int, photo *gif.GIF) error
-
-		GetMessageByID(convID int, messageID int) (Message, error)
-
-		GetConversationNameByUserID(userID int, convID int) (string, error)
-
-		GetConversationPhotoByUserID(userID int, convID int) (*gif.GIF, error)
-
-		AddUserToConversation(convID int, userID int) error
-
-		RemoveUserFromConversation(convID int, userID int) error
-	*/
+	
 	CheckIfUserExists(username string) (bool, error)
 
 	AddNewUser(username string, securityKey string) (int, error)

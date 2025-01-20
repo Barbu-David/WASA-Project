@@ -16,7 +16,7 @@ func generateAPIKey() (string, error) {
 	for i := 0; i < apiKeyLength; i++ {
 		index, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
 		if err != nil {
-			return "", err
+			return "error key", err
 		}
 		apiKey = append(apiKey, charset[index.Int64()])
 	}
