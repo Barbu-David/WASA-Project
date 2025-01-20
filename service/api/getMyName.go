@@ -1,30 +1,37 @@
 package api
 
 import (
-	"github.com/julienschmidt/httprouter"
 	"encoding/json"
+	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"
 )
 
 func (rt *_router) getMyUserName(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	// Extract the security token from the request header
+	securityToken := r.Header.Get("security_token")
+	if securityToken == "" {
+		json.NewEncoder(w).Encode(map[string]string{"error": "Missing security token"})
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	// Extract the user ID from the URL path
 	userIDParam := ps.ByName("id")
 
 	// Convert userID to integer
-	userID, err := strconv.Atoi(userIDParam)
+	requestedUserID, err := strconv.Atoi(userIDParam)
 	if err != nil {
-		// Invalid user ID format
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid or unauthorized user ID"})
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid user ID"})
 		return
 	}
 
 	// Retrieve the user's name from the database
-	username, err := rt.db.GetUserName(userID)
+	username, err := rt.db.GetUserName(requestedUserID)
 	if err != nil {
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"error": "User not found"})
+		json.NewEncoder(w).Encode(map[string]string{"error": "User not found"})
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
@@ -37,5 +44,8 @@ func (rt *_router) getMyUserName(w http.ResponseWriter, r *http.Request, ps http
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		json.NewEncoder(w).Encode(map[string]string{"error": "Error encoding response"})
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
