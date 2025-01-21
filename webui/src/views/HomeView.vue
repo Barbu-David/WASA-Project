@@ -5,6 +5,9 @@ export default {
 			errormsg: null,
 			loading: false,
 			some_data: null,
+			username: '',
+			securityKey: null,
+			userId: null,
 		}
 	},
 	methods: {
@@ -19,6 +22,18 @@ export default {
 			}
 			this.loading = false;
 		},
+		async loginUser() {
+			try {
+				let response = await this.$axios.post("http://localhost:3000/session", {
+					name: this.username
+				});
+				this.securityKey = response.data.apiKey;
+				this.userId = response.data.userID;
+				alert("Login successful!");
+			} catch (e) {
+				this.errormsg = "Login failed: " + e;
+			}
+		}
 	},
 	mounted() {
 		this.refresh()
@@ -28,29 +43,15 @@ export default {
 
 <template>
 	<div>
-		<div
-			class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-			<h1 class="h2">Home page</h1>
-			<div class="btn-toolbar mb-2 mb-md-0">
-				<div class="btn-group me-2">
-					<button type="button" class="btn btn-sm btn-outline-secondary" @click="refresh">
-						Refresh
-					</button>
-					<button type="button" class="btn btn-sm btn-outline-secondary" @click="exportList">
-						Export
-					</button>
-				</div>
-				<div class="btn-group me-2">
-					<button type="button" class="btn btn-sm btn-outline-primary" @click="newItem">
-						New
-					</button>
-				</div>
-			</div>
-		</div>
-
-		<ErrorMsg v-if="errormsg" :msg="errormsg"></ErrorMsg>
+		<h1 class="h2">Home page</h1>
+		<input v-model="username" placeholder="Enter your name" />
+		<button @click="loginUser">Login</button>
+		<p v-if="securityKey">Security Key: {{ securityKey }}</p>
+		<p v-if="userId">User ID: {{ userId }}</p>
+		<p v-if="errormsg" style="color:red">{{ errormsg }}</p>
 	</div>
 </template>
 
 <style>
 </style>
+
