@@ -2,26 +2,12 @@
 export default {
 	data: function() {
 		return {
-			errormsg: null,
-			loading: false,
-			some_data: null,
 			username: '',
 			securityKey: null,
 			userId: null,
 		}
 	},
 	methods: {
-		async refresh() {
-			this.loading = true;
-			this.errormsg = null;
-			try {
-				let response = await this.$axios.get("/");
-				this.some_data = response.data;
-			} catch (e) {
-				this.errormsg = e.toString();
-			}
-			this.loading = false;
-		},
 		async loginUser() {
 			try {
 				let response = await this.$axios.post("http://localhost:3000/session", {
@@ -34,9 +20,6 @@ export default {
 				this.errormsg = "Login failed: " + e;
 			}
 		}
-	},
-	mounted() {
-		this.refresh()
 	}
 }
 </script>
@@ -48,7 +31,6 @@ export default {
 		<button @click="loginUser">Login</button>
 		<p v-if="securityKey">Security Key: {{ securityKey }}</p>
 		<p v-if="userId">User ID: {{ userId }}</p>
-		<p v-if="errormsg" style="color:red">{{ errormsg }}</p>
 	</div>
 </template>
 
