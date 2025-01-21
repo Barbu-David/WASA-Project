@@ -4,7 +4,7 @@ package main
 
 import (
 	"fmt"
-	"hilo.uniroma1.it/hilo/webui"
+	"wasatext/webui"	
 	"io/fs"
 	"net/http"
 	"strings"
