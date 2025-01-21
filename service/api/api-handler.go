@@ -8,7 +8,7 @@ func (rt *_router) Handler() http.Handler {
 
 	rt.router.POST("/session", rt.doLogin)
 
-	rt.router.PUT("/users/:id/name", rt.setMyUserName)
+	rt.router.PUT("/users/:id/name", rt.wrap(setMyUserName))
 	rt.router.GET("/users/:id/name", rt.getMyUserName)
 	rt.router.PUT("/users/:id/photo", rt.setMyPhoto)
 	rt.router.GET("/users/:id/photo", rt.getMyPhoto)
