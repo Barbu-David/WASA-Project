@@ -30,6 +30,4 @@ export default {}
 </template>
 
 <style>
-/* Add your styles here */
 </style>
-
