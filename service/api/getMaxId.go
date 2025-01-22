@@ -5,8 +5,9 @@ import (
 	"net/http"
 	//		"encoding/json"
 	//		"image/gif"
+	//		"time"
 	"wasatext/service/api/reqcontext"
 )
 
-func (rt *_router) setMyUserName(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
+func (rt *_router) getMaxId(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
 }

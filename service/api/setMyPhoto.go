@@ -5,8 +5,9 @@ import (
 	"net/http"
 	//		"encoding/json"
 	//		"image/gif"
+	"wasatext/service/api/reqcontext"
 )
 
-func (rt *_router) setMyPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (rt *_router) setMyPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
 
 }
