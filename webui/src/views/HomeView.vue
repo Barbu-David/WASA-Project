@@ -46,29 +46,39 @@ export default {
                         this.msg = "Logged out successfully";
                         this.otherUsers = [];
                 },
-                async fetchUsers() {
-                        try {
-                                let maxIdResponse = await this.$axios.get("/users", {
-                                        headers: { Authorization: `Bearer ${this.securityKey}` }
-                                });
-                                let maxUserId = maxIdResponse.data.maxUserId;
-                                let users = await Promise.all(
-                                        Array.from({ length: maxUserId }, (_, i) => i + 1)
-                                        .filter(id => id !== this.userId)
-                                        .map(async (id) => {
-                                                let userResponse = await this.$axios.get(`/users/${id}/name`, {
-                                                        headers: { Authorization: `Bearer ${this.securityKey}` }
-                                                });
-                                                return { id, name: userResponse.data.name };
-                                        })
-                                );
-                                this.otherUsers = users;
-                        } catch (e) {
-                                this.msg = "Failed to fetch user data: " + e.message;
-                        }
+		async fetchUsers() {
+   	 if (!this.securityKey) {
+        this.msg = "Authorization key is missing. Please log in.";
+        return;
+    }
+
+    try {
+        let maxIdResponse = await this.$axios.get("/users", {
+            headers: { Authorization:`Bearer ${this.securityKey}` }
+        });
+
+        let maxUserId = maxIdResponse.data.maxUserId;
+
+        let users = await Promise.all(
+            Array.from({ length: maxUserId }, (_, i) => i + 1)
+            .filter(id => id !== this.userId)
+            .map(async (id) => {
+                let userResponse = await this.$axios.get(`/users/${id}/name`, {
+                    headers: { Authorization:`Bearer ${this.securityKey}` }
+                });
+                return { id, name: userResponse.data.name };
+            })
+        );
+
+        this.otherUsers = users;
+    } catch (e) {
+        this.msg = "Failed to fetch user data: " + e.message;
+    }
+}
+
                 }
         }
-}
+
 </script>
 
 <style>

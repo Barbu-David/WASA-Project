@@ -79,6 +79,8 @@ paths:
     summary: Get the maximum user ID
     description: Retrieves the highest user ID in the system.
     operationId: getMaxUserId
+    security:
+     - PrettyGoodSecurity: []
     responses:
      '200':
        description: Maximum user ID successfully retrieved.
@@ -152,6 +154,8 @@ paths:
       summary: Get a user's name
       description: Get the name for a user identified by their unique ID.
       operationId: getMyName
+      security:
+        - PrettyGoodSecurity: []
       responses:
         '200':
           description: Successfully got the photo.

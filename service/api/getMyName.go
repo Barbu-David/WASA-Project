@@ -5,18 +5,15 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"
+	"fmt"
 	"wasatext/service/api/reqcontext"
 )
 
 func (rt *_router) getMyUserName(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
 	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		w.WriteHeader(http.StatusUnauthorized)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Missing authorization header"})
-		return
-	}
+	fmt.Println("Header: ", authHeader, "\n")
 
-	const bearerPrefix = "Bearer "
+	const bearerPrefix = " Bearer "
 	if len(authHeader) <= len(bearerPrefix) || authHeader[:len(bearerPrefix)] != bearerPrefix {
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid authorization format"})
