@@ -8,7 +8,6 @@ func (rt *_router) Handler() http.Handler {
 
 	rt.router.POST("/session", rt.wrap(rt.doLogin))
 
-
 	rt.router.GET("/users", rt.wrap(rt.getMaxId))
 	rt.router.PUT("/users/:id/name", rt.wrap(rt.setMyUserName))
 	rt.router.GET("/users/:id/name", rt.wrap(rt.getMyUserName))

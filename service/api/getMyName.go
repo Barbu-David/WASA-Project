@@ -9,21 +9,34 @@ import (
 )
 
 func (rt *_router) getMyUserName(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-	// Extract the security token from the request header
-	securityToken := r.Header.Get("security_token")
-	if securityToken == "" {
-		json.NewEncoder(w).Encode(map[string]string{"error": "Missing security token"})
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Missing authorization header"})
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
+	const bearerPrefix = "Bearer "
+	if len(authHeader) <= len(bearerPrefix) || authHeader[:len(bearerPrefix)] != bearerPrefix {
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid authorization format"})
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// Extract the token by removing 'Bearer ' prefix
+	token := authHeader[len(bearerPrefix):]
+
+	if token != "" { //The user should be able to get the name of any user, he just needs to have a valid token
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Empty token"})
+		w.WriteHeader(http.StatusUnauthorized)
+	}
 	// Extract the user ID from the URL path
 	userIDParam := ps.ByName("id")
 
 	// Convert userID to integer
 	requestedUserID, err := strconv.Atoi(userIDParam)
 	if err != nil {
-		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid or unauthorized user ID"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid or unauthorized user ID"})
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -31,8 +44,9 @@ func (rt *_router) getMyUserName(w http.ResponseWriter, r *http.Request, ps http
 	// Retrieve the user's name from the database
 	username, err := rt.db.GetUserName(requestedUserID)
 	if err != nil {
-		json.NewEncoder(w).Encode(map[string]string{"error": "User not found"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "User not found"})
 		w.WriteHeader(http.StatusNotFound)
+		ctx.Logger.WithError(err).Error("Database fail")
 		return
 	}
 
@@ -46,7 +60,7 @@ func (rt *_router) getMyUserName(w http.ResponseWriter, r *http.Request, ps http
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		json.NewEncoder(w).Encode(map[string]string{"error": "Error encoding response"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Error encoding response"})
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
