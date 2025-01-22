@@ -28,9 +28,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"wasatext/service/api"
-	"wasatext/service/database"
-	"wasatext/service/globaltime"
 	"github.com/ardanlabs/conf"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/sirupsen/logrus"
@@ -39,6 +36,9 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"wasatext/service/api"
+	"wasatext/service/database"
+	"wasatext/service/globaltime"
 )
 
 // main is the program entry point. The only purpose of this function is to call run() and set the exit code if there is

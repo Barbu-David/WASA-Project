@@ -4,13 +4,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"image/gif" 
+	"image/gif"
 	"time"
 )
 
 type AppDatabase interface {
 	Ping() error
-	
+
 	CheckIfUserExists(username string) (bool, error)
 
 	AddNewUser(username string, securityKey string) (int, error)
