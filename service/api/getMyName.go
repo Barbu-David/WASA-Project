@@ -5,9 +5,10 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"
+	"wasatext/service/api/reqcontext"
 )
 
-func (rt *_router) getMyUserName(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (rt *_router) getMyUserName(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
 	// Extract the security token from the request header
 	securityToken := r.Header.Get("security_token")
 	if securityToken == "" {

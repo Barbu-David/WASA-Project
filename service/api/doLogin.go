@@ -6,6 +6,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"math/big"
 	"net/http"
+	"wasatext/service/api/reqcontext"
 )
 
 func generateAPIKey() (string, error) {
@@ -24,7 +25,7 @@ func generateAPIKey() (string, error) {
 	return string(apiKey), nil
 }
 
-func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
 	var requestBody struct {
 		Name string `json:"name"`
 	}
