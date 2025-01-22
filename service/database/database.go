@@ -20,6 +20,8 @@ type AppDatabase interface {
 	GetUserKey(userID int) (string, error)
 
 	GetUserID(username string) (int, error)
+
+	GetMaxUserID() (int, error)
 }
 
 type User struct {
