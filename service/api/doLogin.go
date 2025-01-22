@@ -23,27 +23,28 @@ func generateAPIKey() (string, error) {
 
 	return string(apiKey), nil
 }
+
 func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	var requestBody struct {
 		Name string `json:"name"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request body"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request body"})
 		return
 	}
 
 	username := requestBody.Name
 	if len(username) < 3 || len(username) > 16 {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Username must be between 3 and 16 characters"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Username must be between 3 and 16 characters"})
 		return
 	}
 
 	exists, err := rt.db.CheckIfUserExists(username)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Database error"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Database error"})
 		return
 	}
 
@@ -53,28 +54,28 @@ func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter
 		apiKey, err = generateAPIKey()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Error generating API key"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "Error generating API key"})
 			return
 		}
 
 		userID, err = rt.db.AddNewUser(username, apiKey)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Error adding new user"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "Error adding new user"})
 			return
 		}
 	} else {
 		userID, err = rt.db.GetUserID(username)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Error retrieving user ID"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "Error retrieving user ID"})
 			return
 		}
 
 		apiKey, err = rt.db.GetUserKey(userID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Error retrieving API key"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "Error retrieving API key"})
 			return
 		}
 	}
@@ -90,7 +91,7 @@ func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated) // Corrected for successful login/registration
-	json.NewEncoder(w).Encode(response)
+	w.WriteHeader(http.StatusCreated) 
+	_ = json.NewEncoder(w).Encode(response)
 }
 

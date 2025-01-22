@@ -3,6 +3,7 @@ export default {
 	data: function() {
 		return {
 			username: '',
+			msg: '',
 			securityKey: null,
 			userId: null,
 		}
@@ -14,10 +15,10 @@ export default {
 					name: this.username
 				});
 				this.securityKey = response.data.apiKey;
-				this.userId = response.data.userID;
-				alert("Login successful!");
+				this.userId = response.data.userId;
+				this.msg="Logged in as " +this.username;
 			} catch (e) {
-				this.errormsg = "Login failed: " + e;
+				this.msg = "Login failed: " + e;
 			}
 		}
 	}
@@ -26,14 +27,12 @@ export default {
 
 <template>
 	<div>
-		<h1 class="h2">Home page</h1>
+		<h1 class="h2">Log in</h1>
 		<input v-model="username" placeholder="Enter your name" />
 		<button @click="loginUser">Login</button>
-		<p v-if="securityKey">Security Key: {{ securityKey }}</p>
-		<p v-if="userId">User ID: {{ userId }}</p>
+		<p v-if="msg">{{ msg }}</p>
 	</div>
 </template>
 
 <style>
 </style>
-

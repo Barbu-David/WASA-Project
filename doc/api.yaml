@@ -73,7 +73,31 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorMessage'
         
-  
+  /users:
+   get:
+    tags: ["user info"]
+    summary: Get the maximum user ID
+    description: Retrieves the highest user ID in the system.
+    operationId: getMaxUserId
+    responses:
+     '200':
+       description: Maximum user ID successfully retrieved.
+       content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              maxUserId:
+                $ref: '#/components/schemas/UserId'
+     '500':
+      description: Internal Server Error. Something went wrong on the server.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                $ref: '#/components/schemas/ErrorMessage'
   /users/{id}/name:
     parameters:
      - name: id
@@ -280,7 +304,68 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorMessage'
-        
+    put:
+     tags: ["groups"]
+     summary: Start a conversation for a user
+     description: Starts a conversation for a specific user.
+     operationId: startNewConversation
+     security:
+      - PrettyGoodSecurity: []
+     requestBody:
+      required: true
+      content:
+       application/json:
+         schema:
+           type: object
+           properties:
+             userIds:
+               type: array
+               items:
+                 $ref: '#/components/schemas/UserId'
+               minItems: 0
+               maxItems: 10000
+               description: A list of user IDs to include in the conversation.
+               example: [12, 34, 56]
+           required:
+             - userIds
+     responses:
+      '200':
+        description: Conversation successfully started.
+        content:
+         application/json:
+           schema:
+             type: object
+             properties:
+               conversationId:
+                 $ref: '#/components/schemas/ConversationId'
+      '400':
+       description: Bad Request. Invalid input provided.
+       content:
+         application/json:
+           schema:
+             type: object
+             properties:
+               error:
+                 $ref: '#/components/schemas/ErrorMessage'
+      '404':
+       description: Not Found. The requested resource does not exist.
+       content:
+         application/json:
+           schema:
+             type: object
+             properties:
+               error:
+                 $ref: '#/components/schemas/ErrorMessage'
+      '500':
+       description: Internal Server Error. Something went wrong on the server.
+       content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                $ref: '#/components/schemas/ErrorMessage'
+
   /conversations/{convid}:
     parameters:
      - name: convid

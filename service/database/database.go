@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"image/gif" // Importing for handling GIFs
+	"image/gif" 
 	"time"
 )
 
