@@ -25,7 +25,7 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.GET("/conversations/:convid/messages/:messageId", rt.wrap(rt.getMessage))
 	rt.router.POST("/conversations/:convid/messages/:messageId/photo", rt.wrap(rt.getMessagePhoto))
 
-	rt.router.PUT("/conversations", rt.wrap(rt.startConversation))
+	rt.router.PUT("/conversations/new", rt.wrap(rt.startConversation))
 	rt.router.PUT("/conversations/:convid/name", rt.wrap(rt.setGroupName))
 	rt.router.PUT("/conversations/:convid/photo", rt.wrap(rt.setGroupPhoto))
 	rt.router.GET("/conversations/:convid/name", rt.wrap(rt.getGroupName))

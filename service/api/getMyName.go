@@ -2,16 +2,15 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"
-	"fmt"
 	"wasatext/service/api/reqcontext"
 )
 
 func (rt *_router) getMyUserName(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
 	authHeader := r.Header.Get("Authorization")
-	fmt.Println("Header: ", authHeader, "\n")
 
 	const bearerPrefix = " Bearer "
 	if len(authHeader) <= len(bearerPrefix) || authHeader[:len(bearerPrefix)] != bearerPrefix {
