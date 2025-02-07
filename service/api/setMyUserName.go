@@ -59,7 +59,7 @@ func (rt *_router) setMyUserName(w http.ResponseWriter, r *http.Request, ps http
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Username must be between 3 and 16 characters"})
 		return
 	}
-	
+
 	err = rt.db.SetUserName(requestedUserID, requestBody.Name)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
