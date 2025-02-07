@@ -16,6 +16,7 @@ type AppDatabase interface {
 	AddNewUser(username string, securityKey string) (int, error)
 
 	GetUserName(userID int) (string, error)
+	SetUserName(userID int, username string) error
 
 	GetUserKey(userID int) (string, error)
 

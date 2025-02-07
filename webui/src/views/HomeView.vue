@@ -11,6 +11,10 @@
                 <li v-for="user in otherUsers" :key="user.id">{{ user.name }}</li>
             </ul>
         </div>
+        <div v-if="securityKey" class="change-name">
+            <input v-model="newName" placeholder="Change your name" />
+            <button @click="changeName">Change Name</button>
+        </div>
     </div>
 </template>
 
@@ -22,6 +26,7 @@ export default {
             msg: '',
             securityKey: null,
             userId: null,
+            newName: '', 
             otherUsers: []
         };
     },
@@ -51,6 +56,37 @@ export default {
             this.userId = null;
             this.otherUsers = [];
             this.msg = "Logged out successfully";
+        },
+
+        async changeName() {
+            try {
+                // Ensure required fields are present
+                if (!this.securityKey || !this.userId || !this.newName) {
+                    this.msg = "All fields are required to change your name.";
+                    return;
+                }
+
+                // Prepare the API request
+                const response = await this.$axios.put(`/users/${this.userId}/name`, 
+                    { name: this.newName }, // Request body
+                    {
+                        headers: {
+                            Authorization: `Bearer ${this.securityKey}`, // Security key in header
+                            "Content-Type": "application/json"
+                        }
+                    }
+                );
+
+                if (response.status === 204) {
+                    this.msg = "Name changed successfully!";
+                    this.newName = ""; // Clear the input field after success
+                } else {
+                    this.msg = `Unexpected response: ${response.status}`;
+                }
+            } catch (error) {
+                // Handle errors gracefully
+                this.msg = `Failed to change name: ${error.response?.data?.error || error.message}`;
+            }
         },
 
         async fetchUsers() {
