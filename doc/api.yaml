@@ -302,7 +302,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorMessage'
-  /conversations/new:
+  /new_conversation:
     put:
      tags: ["groups"]
      summary: Start a conversation for a user

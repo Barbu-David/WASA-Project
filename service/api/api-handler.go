@@ -14,8 +14,10 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.PUT("/users/:id/photo", rt.wrap(rt.setMyPhoto))
 	rt.router.GET("/users/:id/photo", rt.wrap(rt.getMyPhoto))
 
-	rt.router.GET("/conversations/:convid", rt.wrap(rt.getConversation))
+	rt.router.PUT("/new_conversation", rt.wrap(rt.startConversation))
+
 	rt.router.GET("/conversations", rt.wrap(rt.getMyConversations))
+	rt.router.GET("/conversations/:convid", rt.wrap(rt.getConversation))
 
 	rt.router.POST("/conversations/:convid/", rt.wrap(rt.sendMessage))
 	rt.router.DELETE("/conversations/:convid/messages/:messageId", rt.wrap(rt.deleteMessage))
@@ -25,7 +27,6 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.GET("/conversations/:convid/messages/:messageId", rt.wrap(rt.getMessage))
 	rt.router.POST("/conversations/:convid/messages/:messageId/photo", rt.wrap(rt.getMessagePhoto))
 
-	rt.router.PUT("/conversations/new", rt.wrap(rt.startConversation))
 	rt.router.PUT("/conversations/:convid/name", rt.wrap(rt.setGroupName))
 	rt.router.PUT("/conversations/:convid/photo", rt.wrap(rt.setGroupPhoto))
 	rt.router.GET("/conversations/:convid/name", rt.wrap(rt.getGroupName))

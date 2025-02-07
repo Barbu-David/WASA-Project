@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"wasatext/service/api/reqcontext"
@@ -11,9 +10,8 @@ import (
 func (rt *_router) getMaxId(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
 
 	authHeader := r.Header.Get("Authorization")
-	fmt.Println("Header: ", authHeader, "\n")
 
-	const bearerPrefix = " Bearer "
+	const bearerPrefix = "Bearer "
 	if len(authHeader) <= len(bearerPrefix) || authHeader[:len(bearerPrefix)] != bearerPrefix {
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid authorization format"})
