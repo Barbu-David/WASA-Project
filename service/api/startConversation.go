@@ -52,7 +52,7 @@ func (rt *_router) startConversation(w http.ResponseWriter, r *http.Request, ps 
 	var conv_id int
 	var err error
 
-	if len(reqBody.UserIds) > 1 {
+	if len(reqBody.UserIds) < 3 {
 
 		name0, err := rt.db.GetUserName(reqBody.UserIds[0])
 
