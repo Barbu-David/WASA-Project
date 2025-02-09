@@ -34,8 +34,10 @@
         <div v-else>
           <p>You have no conversations.</p>
         </div>
-        <!-- Add New Conversation Button -->
-        <button @click="showNewConversation = true">Add New Conversation</button>
+        <!-- Only show Add New Conversation button when no conversation is selected -->
+        <button  @click="showNewConversation = true">
+          Add New Conversation
+        </button>
       </div>
 
       <!-- New Conversation Creation Section -->
@@ -55,7 +57,7 @@
       </div>
     </div>
 
-    <!-- Right Panel: Conversation Details -->
+    <!-- Right Panel: Conversation Details with Group Options -->
     <div class="conversation-details" v-if="selectedConversationDetails">
       <h1>{{ selectedConversationDetails.name }}</h1>
       <h3>
@@ -67,6 +69,43 @@
           {{ member.name }}<span v-if="index < selectedConversationDetails.memberNames.length - 1">, </span>
         </span>
       </h3>
+
+      <!-- Group Options -->
+      <div class="group-options">
+        <h3>Options</h3>
+        <!-- Option 1: Leave Group (red button) -->
+        <button class="leave-group" style="background-color: red; color: white;" @click="leaveGroup">
+          Leave Group
+        </button>
+        <!-- Option 2: Add Members -->
+        <button @click="toggleAddMembers">Add Members</button>
+        <!-- Option 3: Change Group Name -->
+        <button @click="toggleChangeGroupName">Change Group Name</button>
+
+        <!-- UI for Adding New Members -->
+        <div v-if="showAddMembers">
+          <h4>Add New Members</h4>
+          <input v-model="newMembersSearch" placeholder="Search users" />
+          <ul>
+            <li v-for="user in filteredUsersForGroup" :key="user.id">
+              <label>
+                <input type="checkbox" :value="user.id" v-model="selectedNewMemberIds" />
+                {{ user.name }}
+              </label>
+            </li>
+          </ul>
+          <button @click="confirmAddMembers">Confirm Add Members</button>
+          <button @click="cancelAddMembers">Cancel</button>
+        </div>
+
+        <!-- UI for Changing Group Name -->
+        <div v-if="showChangeGroupName">
+          <h4>Change Group Name</h4>
+          <input v-model="newGroupName" placeholder="Enter new group name" />
+          <button @click="confirmChangeGroupName">Confirm Change</button>
+          <button @click="cancelChangeGroupName">Cancel</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -93,6 +132,13 @@ export default {
 
       // Details for the selected conversation
       selectedConversationDetails: null,
+
+      // For group options:
+      showAddMembers: false,
+      newMembersSearch: "",
+      selectedNewMemberIds: [],
+      showChangeGroupName: false,
+      newGroupName: "",
     };
   },
   computed: {
@@ -102,6 +148,21 @@ export default {
       return this.otherUsers.filter(user =>
         user.name.toLowerCase().includes(this.userSearch.toLowerCase())
       );
+    },
+
+    filteredUsersForGroup() {
+      if (!this.selectedConversationDetails) return [];
+      // Only show users that are not already participants in the group
+      const currentMembers = this.selectedConversationDetails.participants || [];
+      if (!this.newMembersSearch) {
+        return this.otherUsers.filter(user => !currentMembers.includes(user.id));
+      }
+      return this.otherUsers.filter(user => {
+        return (
+          !currentMembers.includes(user.id) &&
+          user.name.toLowerCase().includes(this.newMembersSearch.toLowerCase())
+        );
+      });
     },
   },
   methods: {
@@ -135,6 +196,11 @@ export default {
       this.userSearch = "";
       this.showNewConversation = false;
       this.selectedConversationDetails = null;
+      this.showAddMembers = false;
+      this.newMembersSearch = "";
+      this.selectedNewMemberIds = [];
+      this.showChangeGroupName = false;
+      this.newGroupName = "";
       this.msg = "Logged out successfully";
     },
     // Change the user’s name.
@@ -302,6 +368,117 @@ export default {
           (error.response?.data?.error || error.message);
       }
     },
+
+    // Option 1: Leave Group
+    async leaveGroup() {
+      try {
+        await this.$axios.delete(`/conversations/${this.selectedConversationDetails.id}/members`, {
+          headers: { Authorization: `Bearer ${this.securityKey}` },
+        });
+        this.msg = "Successfully left the group!";
+        // Refresh the conversation list and clear the selected conversation
+        await this.fetchConversations();
+        this.selectedConversationDetails = null;
+      } catch (error) {
+        if (error.response && error.response.status === 403) {
+          this.msg = "Not a group";
+        } else {
+          this.msg = "Failed to leave group: " + (error.response?.data?.error || error.message);
+        }
+      }
+    },
+
+    // Option 2: Toggle Add Members UI
+    toggleAddMembers() {
+      this.showAddMembers = !this.showAddMembers;
+      // Reset the add members form
+      this.newMembersSearch = "";
+      this.selectedNewMemberIds = [];
+    },
+
+    // Option 2: Confirm Adding New Members
+    async confirmAddMembers() {
+      if (!this.selectedNewMemberIds.length) {
+        this.msg = "Please select at least one user to add.";
+        return;
+      }
+      try {
+        await this.$axios.put(
+          `/conversations/${this.selectedConversationDetails.id}/members`,
+          { userIds: this.selectedNewMemberIds },
+          {
+            headers: {
+              Authorization: `Bearer ${this.securityKey}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        this.msg = "Members added successfully!";
+        // Optionally refresh conversation details
+        await this.selectConversation({
+          id: this.selectedConversationDetails.id,
+          name: this.selectedConversationDetails.name,
+        });
+        this.cancelAddMembers();
+      } catch (error) {
+        if (error.response && error.response.status === 403) {
+          this.msg = "Not a group";
+        } else {
+          this.msg = "Failed to add members: " + (error.response?.data?.error || error.message);
+        }
+      }
+    },
+
+    // Option 2: Cancel Add Members UI
+    cancelAddMembers() {
+      this.showAddMembers = false;
+      this.newMembersSearch = "";
+      this.selectedNewMemberIds = [];
+    },
+
+    // Option 3: Toggle Change Group Name UI
+    toggleChangeGroupName() {
+      this.showChangeGroupName = !this.showChangeGroupName;
+      this.newGroupName = "";
+    },
+
+    // Option 3: Confirm Changing Group Name
+    async confirmChangeGroupName() {
+      if (!this.newGroupName) {
+        this.msg = "New group name is required.";
+        return;
+      }
+      try {
+        await this.$axios.put(
+          `/conversations/${this.selectedConversationDetails.id}/name`,
+          { name: this.newGroupName },
+          {
+            headers: {
+              Authorization: `Bearer ${this.securityKey}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        this.msg = "Group name changed successfully!";
+        // Update the conversation details with the new name
+        this.selectedConversationDetails.name = this.newGroupName;
+        this.cancelChangeGroupName();
+        // Refresh conversation list if needed
+        await this.fetchConversations();
+      } catch (error) {
+        if (error.response && error.response.status === 403) {
+          this.msg = "Not a group";
+        } else {
+          this.msg = "Failed to change group name: " + (error.response?.data?.error || error.message);
+        }
+      }
+    },
+
+    // Option 3: Cancel Change Group Name UI
+    cancelChangeGroupName() {
+      this.showChangeGroupName = false;
+      this.newGroupName = "";
+    },
   },
 };
 </script>
@@ -351,6 +528,30 @@ export default {
   flex: 1;
   padding: 20px;
   margin-left: 60px;
+}
+
+/* Styles for Group Options Section */
+.group-options {
+  margin-top: 20px;
+  padding-top: 10px;
+  border-top: 1px solid #ccc;
+}
+
+.group-options h3 {
+  margin-bottom: 10px;
+}
+
+.group-options button {
+  margin-right: 5px;
+  margin-bottom: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.leave-group {
+  background-color: red;
+  color: white;
+  border: none;
 }
 </style>
 
