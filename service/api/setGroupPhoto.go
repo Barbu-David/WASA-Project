@@ -3,8 +3,8 @@ package api
 import (
 	"github.com/julienschmidt/httprouter"
 	"net/http"
-	//		"encoding/json"
-	//		"image/gif"
+	// "encoding/json"
+	// "image/gif"
 
 	"wasatext/service/api/reqcontext"
 )

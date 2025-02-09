@@ -25,10 +25,8 @@ func (rt *_router) getGroupName(w http.ResponseWriter, r *http.Request, ps httpr
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Empty token"})
 	}
 
-	// Extract the user ID from the URL path
 	conv_id_param := ps.ByName("convid")
 
-	// Convert userID to integer
 	conv_id, err := strconv.Atoi(conv_id_param)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)

@@ -30,6 +30,7 @@ type AppDatabase interface {
 
 	GetConversationName(conv_id int) (string, error)
 	SetConversationName(conv_id int, name string) error
+	IsGroupConversation(conv_id int) (bool, error)
 
 	GetUserConversations(userID int) ([]int, error)
 	GetConversationUsers(conv_id int) ([]int, error)

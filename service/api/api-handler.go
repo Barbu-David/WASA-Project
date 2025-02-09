@@ -11,12 +11,12 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.GET("/users", rt.wrap(rt.getMaxId))               // *
 	rt.router.PUT("/users/:id/name", rt.wrap(rt.setMyUserName)) // *
 	rt.router.GET("/users/:id/name", rt.wrap(rt.getMyUserName)) // *
-	rt.router.PUT("/users/:id/photo", rt.wrap(rt.setMyPhoto))
-	rt.router.GET("/users/:id/photo", rt.wrap(rt.getMyPhoto))
+	rt.router.PUT("/users/:id/photo", rt.wrap(rt.setMyPhoto))   // X
+	rt.router.GET("/users/:id/photo", rt.wrap(rt.getMyPhoto))   // X
 
 	rt.router.PUT("/new_conversation", rt.wrap(rt.startConversation)) // *
 
-	rt.router.GET("/conversations", rt.wrap(rt.getMyConversations)) // *
+	rt.router.GET("/conversations", rt.wrap(rt.getMyConversations))      // *
 	rt.router.GET("/conversations/:convid", rt.wrap(rt.getConversation)) // *
 
 	rt.router.POST("/conversations/:convid/", rt.wrap(rt.sendMessage))
@@ -25,14 +25,14 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.DELETE("/conversations/:convid/messages/:messageId/comments", rt.wrap(rt.uncommentMessage))
 	rt.router.POST("/conversations/:convid/messages/:messageId/comments", rt.wrap(rt.commentMessage))
 	rt.router.GET("/conversations/:convid/messages/:messageId", rt.wrap(rt.getMessage))
-	rt.router.POST("/conversations/:convid/messages/:messageId/photo", rt.wrap(rt.getMessagePhoto))
+	rt.router.GET("/conversations/:convid/messages/:messageId/photo", rt.wrap(rt.getMessagePhoto)) // X
 
-	rt.router.PUT("/conversations/:convid/name", rt.wrap(rt.setGroupName))
-	rt.router.PUT("/conversations/:convid/photo", rt.wrap(rt.setGroupPhoto))
-	rt.router.GET("/conversations/:convid/name", rt.wrap(rt.getGroupName)) // *
-	rt.router.GET("/conversations/:convid/photo", rt.wrap(rt.getGroupPhoto))
-	rt.router.PUT("/conversations/:convid/members", rt.wrap(rt.addToGroup))
-	rt.router.DELETE("/conversations/:convid/members", rt.wrap(rt.leaveGroup))
+	rt.router.PUT("/conversations/:convid/name", rt.wrap(rt.setGroupName))     // *
+	rt.router.PUT("/conversations/:convid/photo", rt.wrap(rt.setGroupPhoto))   // X
+	rt.router.GET("/conversations/:convid/name", rt.wrap(rt.getGroupName))     // *
+	rt.router.GET("/conversations/:convid/photo", rt.wrap(rt.getGroupPhoto))   // X
+	rt.router.PUT("/conversations/:convid/members", rt.wrap(rt.addToGroup))    // *
+	rt.router.DELETE("/conversations/:convid/members", rt.wrap(rt.leaveGroup)) // *
 
 	rt.router.GET("/liveness", rt.liveness) // *
 
