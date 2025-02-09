@@ -322,7 +322,7 @@ paths:
                type: array
                items:
                  $ref: '#/components/schemas/UserId'
-               minItems: 0
+               minItems: 1
                maxItems: 10000
                description: A list of user IDs to include in the conversation.
                example: [12, 34, 56]

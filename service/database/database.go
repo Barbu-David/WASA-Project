@@ -10,6 +10,7 @@ type AppDatabase interface {
 	Ping() error
 
 	CheckIfUserExists(username string) (bool, error)
+
 	AddNewUser(username string, securityKey string) (int, error)
 
 	GetUserName(userID int) (string, error)
@@ -17,15 +18,21 @@ type AppDatabase interface {
 
 	GetUserKey(userID int) (string, error)
 	GetUserID(username string) (int, error)
+	GetUserIDbyKey(security_key string) (int, error)
 
 	GetMaxUserID() (int, error)
 
 	NewConversation(name string, group bool) (int, error)
 	NewConversationMember(user_id int, conv_id int) error
+	IsMemberConversation(user_id int, conv_id int) (bool, error)
+
 	DeleteConversationMember(user_id int, conv_id int) error
 
 	GetConversationName(conv_id int) (string, error)
-	SetConversationName(conv_id int, name string) error	
+	SetConversationName(conv_id int, name string) error
+
+	GetUserConversations(userID int) ([]int, error)
+	GetConversationUsers(conv_id int) ([]int, error)
 }
 
 type appdbimpl struct {
