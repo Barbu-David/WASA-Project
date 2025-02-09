@@ -4,6 +4,10 @@
         <button v-if="!securityKey" @click="loginUser">Login</button>
         <button v-else @click="logoutUser">Logout</button>
         <p v-if="msg">{{ msg }}</p>
+        <div v-if="securityKey" class="change-name">
+            <input v-model="newName" placeholder="Change your name" />
+            <button @click="changeName">Change Name</button>
+        </div>
         <div class="black-bar"></div>
         <div v-if="securityKey" class="user-list">
             <h3>Other users</h3>
@@ -11,10 +15,7 @@
                 <li v-for="user in otherUsers" :key="user.id">{{ user.name }}</li>
             </ul>
         </div>
-        <div v-if="securityKey" class="change-name">
-            <input v-model="newName" placeholder="Change your name" />
-            <button @click="changeName">Change Name</button>
-        </div>
+
     </div>
 </template>
 

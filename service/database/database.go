@@ -10,17 +10,22 @@ type AppDatabase interface {
 	Ping() error
 
 	CheckIfUserExists(username string) (bool, error)
-
 	AddNewUser(username string, securityKey string) (int, error)
 
 	GetUserName(userID int) (string, error)
 	SetUserName(userID int, username string) error
 
 	GetUserKey(userID int) (string, error)
-
 	GetUserID(username string) (int, error)
 
 	GetMaxUserID() (int, error)
+
+	NewConversation(name string, group bool) (int, error)
+	NewConversationMember(user_id int, conv_id int) error
+	DeleteConversationMember(user_id int, conv_id int) error
+
+	GetConversationName(conv_id int) (string, error)
+	SetConversationName(conv_id int, name string) error	
 }
 
 type appdbimpl struct {
@@ -35,6 +40,7 @@ func New(db *sql.DB) (AppDatabase, error) {
 	usersTableStmt := `CREATE TABLE IF NOT EXISTS Users (
 				id INTEGER NOT NULL PRIMARY KEY,
 				username TEXT NOT NULL,
+				security_key TEXT NOT NULL,
 				gif_photo BLOB
 				);`
 	if _, err := db.Exec(usersTableStmt); err != nil {
@@ -44,6 +50,7 @@ func New(db *sql.DB) (AppDatabase, error) {
 	conversationsTableStmt := `CREATE TABLE IF NOT EXISTS Conversations (
 					id INTEGER NOT NULL PRIMARY KEY,
 					name TEXT NOT NULL,
+					is_group BOOL,
 					gif_photo BLOB
 					);`
 	if _, err := db.Exec(conversationsTableStmt); err != nil {
