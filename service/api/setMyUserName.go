@@ -37,6 +37,14 @@ func (rt *_router) setMyUserName(w http.ResponseWriter, r *http.Request, ps http
 
 	actualKey, err := rt.db.GetUserKey(requestedUserID)
 
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		 ctx.Logger.WithError(err).Error("Database fail")
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid or unauthorized user ID"})
+		return
+	}
+
+
 	// Check if the user and the security key match
 	if actualKey != token {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -50,6 +58,7 @@ func (rt *_router) setMyUserName(w http.ResponseWriter, r *http.Request, ps http
 	}
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		 ctx.Logger.WithError(err).Error("Encoding failed fail")
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request body"})
 		return
 	}

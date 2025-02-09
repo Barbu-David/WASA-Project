@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"image/gif"
-	"time"
 )
 
 type AppDatabase interface {
@@ -25,29 +23,6 @@ type AppDatabase interface {
 	GetMaxUserID() (int, error)
 }
 
-type User struct {
-	ID          int
-	Username    string
-	SecurityKey string
-	GifPhoto    *gif.GIF
-}
-
-type Message struct {
-	ID        int
-	Content   string
-	GifPhoto  *gif.GIF
-	SenderID  int
-	Checkmark string
-	Timestamp time.Time
-}
-
-type Conversation struct {
-	ID       int
-	Name     string
-	GifPhoto *gif.GIF
-	Members  []int
-}
-
 type appdbimpl struct {
 	c *sql.DB
 }
@@ -60,7 +35,6 @@ func New(db *sql.DB) (AppDatabase, error) {
 	usersTableStmt := `CREATE TABLE IF NOT EXISTS Users (
 				id INTEGER NOT NULL PRIMARY KEY,
 				username TEXT NOT NULL,
-				security_key TEXT NOT NULL,
 				gif_photo BLOB
 				);`
 	if _, err := db.Exec(usersTableStmt); err != nil {
@@ -95,6 +69,7 @@ func New(db *sql.DB) (AppDatabase, error) {
 				   sender_id INTEGER NOT NULL,
 				   checkmark TEXT NOT NULL,
 				   timestamp DATETIME NOT NULL,
+				   forwarded BOOL, 
 				   FOREIGN KEY (conv_id) REFERENCES Conversations(id),
 				   FOREIGN KEY (sender_id) REFERENCES Users(id)
 				   );`

@@ -56,5 +56,6 @@ func (rt *_router) getMyUserName(w http.ResponseWriter, r *http.Request, ps http
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Error encoding response"})
+		 ctx.Logger.WithError(err).Error("Encoding failed")
 	}
 }
