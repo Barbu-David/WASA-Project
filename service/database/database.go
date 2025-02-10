@@ -36,20 +36,19 @@ type AppDatabase interface {
 	GetUserConversations(userID int) ([]int, error)
 	GetConversationUsers(conv_id int) ([]int, error)
 	GetConversationMessages(conv_id int) ([]int, error)
-	
+
 	SendMessage(senderID int, convID int, textContent string, forwarded bool, timestamp time.Time) error
 	GetMessage(m_id int) (int, string, bool, time.Time, error)
 	DeleteMessage(m_id int) error
-	
+
 	SeeMessage(user_id int, m_id int) error
 	ReceiveMessage(user_id int, m_id int) error
 
 	GetMessageSeenList(m_id int) ([]int, error)
 	GetMessageCommentList(m_id int) ([]int, []string, error)
 
-	AddComment(sender_id int, m_id int, content string) error	
+	AddComment(sender_id int, m_id int, content string) error
 	RemoveComment(sender_id int, m_id int) error
-
 }
 
 type appdbimpl struct {

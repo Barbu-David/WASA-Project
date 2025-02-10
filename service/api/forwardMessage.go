@@ -44,7 +44,7 @@ func (rt *_router) forwardMessage(w http.ResponseWriter, r *http.Request, ps htt
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Auth error"})
 		return
-		}
+	}
 
 	// And be a member of the conversation
 
@@ -67,24 +67,23 @@ func (rt *_router) forwardMessage(w http.ResponseWriter, r *http.Request, ps htt
 		return
 	}
 
-        m_id_param := ps.ByName("MessageId")
+	m_id_param := ps.ByName("MessageId")
 
-        m_id, err := strconv.Atoi(m_id_param)
-        if err != nil {
-                w.WriteHeader(http.StatusBadRequest)
-                _ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid mid"})
-                return
-        }
+	m_id, err := strconv.Atoi(m_id_param)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid mid"})
+		return
+	}
 
-        _, m_content, _, _, err := rt.db.GetMessage(m_id)
+	_, m_content, _, _, err := rt.db.GetMessage(m_id)
 
-        if err != nil {
-                w.WriteHeader(http.StatusInternalServerError)
-                _ = json.NewEncoder(w).Encode(map[string]string{"error": "Internal Error"})
-                 ctx.Logger.WithError(err).Error("database fail")
-                return
-        }
-
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Internal Error"})
+		ctx.Logger.WithError(err).Error("database fail")
+		return
+	}
 
 	//The user must also be part of the target conversation
 
@@ -99,12 +98,12 @@ func (rt *_router) forwardMessage(w http.ResponseWriter, r *http.Request, ps htt
 	//DB call
 
 	err = rt.db.SendMessage(user_id, requestBody.targetConversationId, m_content, true, globaltime.Now())
-	
+
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "InternalServerError"})
-		 ctx.Logger.WithError(err).Error("database fail")
-		return 
+		ctx.Logger.WithError(err).Error("database fail")
+		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)

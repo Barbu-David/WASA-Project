@@ -55,8 +55,6 @@ func (rt *_router) deleteMessage(w http.ResponseWriter, r *http.Request, ps http
 		return
 	}
 
-
-
 	m_id_param := ps.ByName("MessageId")
 
 	m_id, err := strconv.Atoi(m_id_param)
@@ -71,7 +69,7 @@ func (rt *_router) deleteMessage(w http.ResponseWriter, r *http.Request, ps http
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Internal Error"})
-		 ctx.Logger.WithError(err).Error("database fail")
+		ctx.Logger.WithError(err).Error("database fail")
 		return
 	}
 
@@ -80,13 +78,13 @@ func (rt *_router) deleteMessage(w http.ResponseWriter, r *http.Request, ps http
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Other user's message"})
 		return
 	}
-	
+
 	err = rt.db.DeleteMessage(m_id)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Internal Error"})
-		 ctx.Logger.WithError(err).Error("database fail")
+		ctx.Logger.WithError(err).Error("database fail")
 		return
 	}
 

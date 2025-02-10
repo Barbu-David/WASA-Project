@@ -43,7 +43,7 @@ func (rt *_router) uncommentMessage(w http.ResponseWriter, r *http.Request, ps h
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Auth error"})
 		return
-		}
+	}
 
 	// And be a member of the conversation
 
@@ -55,24 +55,24 @@ func (rt *_router) uncommentMessage(w http.ResponseWriter, r *http.Request, ps h
 		return
 	}
 
-        m_id_param := ps.ByName("MessageId")
+	m_id_param := ps.ByName("MessageId")
 
-        m_id, err := strconv.Atoi(m_id_param)
-        if err != nil {
-                w.WriteHeader(http.StatusBadRequest)
-                _ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid mid"})
-                return
-        }
+	m_id, err := strconv.Atoi(m_id_param)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid mid"})
+		return
+	}
 
 	//DB call
 
 	err = rt.db.RemoveComment(user_id, m_id)
-	
+
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "InternalServerError"})
-		 ctx.Logger.WithError(err).Error("database fail")
-		return 
+		ctx.Logger.WithError(err).Error("database fail")
+		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)

@@ -44,7 +44,7 @@ func (rt *_router) sendMessage(w http.ResponseWriter, r *http.Request, ps httpro
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Auth error"})
 		return
-		}
+	}
 
 	// And be a member of the conversation
 
@@ -77,13 +77,13 @@ func (rt *_router) sendMessage(w http.ResponseWriter, r *http.Request, ps httpro
 	//DB call
 
 	err = rt.db.SendMessage(user_id, conv_id, requestBody.Message, false, globaltime.Now())
-	
+
 	if err != nil {
 
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "InternalServerError"})
-		 ctx.Logger.WithError(err).Error("database fail")
-		return 
+		ctx.Logger.WithError(err).Error("database fail")
+		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)

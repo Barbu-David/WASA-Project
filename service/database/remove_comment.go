@@ -8,6 +8,6 @@ func (db *appdbimpl) RemoveComment(sender_id int, m_id int) error {
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }

@@ -5,8 +5,8 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"
-	"wasatext/service/api/reqcontext"
 	"time"
+	"wasatext/service/api/reqcontext"
 )
 
 func (rt *_router) getMessage(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
@@ -44,7 +44,7 @@ func (rt *_router) getMessage(w http.ResponseWriter, r *http.Request, ps httprou
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Auth error"})
 		return
-		}
+	}
 
 	// And be a member of the conversation
 
@@ -56,68 +56,66 @@ func (rt *_router) getMessage(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 
-        m_id_param := ps.ByName("MessageId")
+	m_id_param := ps.ByName("MessageId")
 
-        m_id, err := strconv.Atoi(m_id_param)
-        if err != nil {
-                w.WriteHeader(http.StatusBadRequest)
-                _ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid mid"})
-                return
-        }
+	m_id, err := strconv.Atoi(m_id_param)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid mid"})
+		return
+	}
 
 	//DB calls
 
 	sender_id, content, fwded, stamp, err := rt.db.GetMessage(m_id)
 
-	if  err != nil {
-                w.WriteHeader(http.StatusInternalServerError)
-                _ = json.NewEncoder(w).Encode(map[string]string{"error": "Error"})
-                ctx.Logger.WithError(err).Error("Database failed")
-        }
-
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Error"})
+		ctx.Logger.WithError(err).Error("Database failed")
+	}
 
 	seenList, err := rt.db.GetMessageSeenList(m_id)
 
-	if  err != nil {
-                w.WriteHeader(http.StatusInternalServerError)
-                _ = json.NewEncoder(w).Encode(map[string]string{"error": "Error"})
-                ctx.Logger.WithError(err).Error("Database failed")
-        }
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Error"})
+		ctx.Logger.WithError(err).Error("Database failed")
+	}
 
 	ownersList, commentList, err := rt.db.GetMessageCommentList(m_id)
 
-	if  err != nil {
-                w.WriteHeader(http.StatusInternalServerError)
-                _ = json.NewEncoder(w).Encode(map[string]string{"error": "Error"})
-                ctx.Logger.WithError(err).Error("Database failed")
-        }
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Error"})
+		ctx.Logger.WithError(err).Error("Database failed")
+	}
 
-        response := struct {
-                stringContent string `json:"stringContent"`
-		senderId int `json:"senderId"`
- 		timestamp time.Time `json:"timestamp"`
-		seen []int `json:"seen"` 
-		forwarded bool `json:"forwarded"` 
-		photoContent bool `json:"photoContent"` 
-		comments []string `json:"comments"` 
-		comment_owners []int `json:"comment_owners"` 
-
-        }{
-                stringContent: content,
-                senderId: sender_id,
-		timestamp: stamp,
-		seen: seenList,
-		forwarded: fwded,
-		photoContent: false,
-		comments: commentList,
+	response := struct {
+		stringContent  string    `json:"stringContent"`
+		senderId       int       `json:"senderId"`
+		timestamp      time.Time `json:"timestamp"`
+		seen           []int     `json:"seen"`
+		forwarded      bool      `json:"forwarded"`
+		photoContent   bool      `json:"photoContent"`
+		comments       []string  `json:"comments"`
+		comment_owners []int     `json:"comment_owners"`
+	}{
+		stringContent:  content,
+		senderId:       sender_id,
+		timestamp:      stamp,
+		seen:           seenList,
+		forwarded:      fwded,
+		photoContent:   false,
+		comments:       commentList,
 		comment_owners: ownersList,
-        }
+	}
 
-        w.Header().Set("Content-Type", "application/json")
-        w.WriteHeader(http.StatusOK)
-        if err := json.NewEncoder(w).Encode(response); err != nil {
-                w.WriteHeader(http.StatusInternalServerError)
-                _ = json.NewEncoder(w).Encode(map[string]string{"error": "Error encoding response"})
-                ctx.Logger.WithError(err).Error("Encoding failed")
-        }
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Error encoding response"})
+		ctx.Logger.WithError(err).Error("Encoding failed")
+	}
 }

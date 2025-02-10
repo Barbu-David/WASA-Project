@@ -8,6 +8,6 @@ func (db *appdbimpl) AddComment(sender_id int, m_id int, content string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }

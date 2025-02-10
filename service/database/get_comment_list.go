@@ -6,7 +6,7 @@ func (db *appdbimpl) GetMessageCommentList(mID int) ([]int, []string, error) {
 		FROM SeenList
 		WHERE m_id = ? AND comment IS NOT NULL`, mID)
 	if err != nil {
-		return nil, nil,  err
+		return nil, nil, err
 	}
 	defer rows.Close()
 

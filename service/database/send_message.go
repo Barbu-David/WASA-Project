@@ -38,7 +38,7 @@ func (db *appdbimpl) SendMessage(senderID int, convID int, textContent string, f
 			VALUES (?, ?, ?, ?, ?)`,
 			msgID, userID, nil, false, false)
 		if err != nil {
-			return  err
+			return err
 		}
 	}
 
