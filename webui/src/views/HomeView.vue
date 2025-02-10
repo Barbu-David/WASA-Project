@@ -35,7 +35,7 @@
           <p>You have no conversations.</p>
         </div>
         <!-- Only show Add New Conversation button when no conversation is selected -->
-        <button  @click="showNewConversation = true">
+        <button @click="showNewConversation = true">
           Add New Conversation
         </button>
       </div>
@@ -106,6 +106,29 @@
           <button @click="cancelChangeGroupName">Cancel</button>
         </div>
       </div>
+
+      <!-- Messages Section -->
+      <div class="messages">
+        <h3>Messages</h3>
+        <div v-if="messages.length === 0">No messages in conversation</div>
+        <ul v-else>
+          <li v-for="(message, index) in messages" :key="index">
+            <strong>{{ getSenderName(message.senderId) }}</strong>
+            ({{ message.timestamp ? formatTimestamp(message.timestamp) : 'No timestamp' }}):<br />
+            <span>{{ message.stringContent || '[No content]' }}</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Message Sending Section -->
+      <div class="message-sending">
+        <input
+          v-model="newMessage"
+          placeholder="Type your message here"
+          @keyup.enter="sendMessage"
+        />
+        <button @click="sendMessage">Send</button>
+      </div>
     </div>
   </div>
 </template>
@@ -139,6 +162,11 @@ export default {
       selectedNewMemberIds: [],
       showChangeGroupName: false,
       newGroupName: "",
+      // Messages for the selected conversation
+      messages: [],
+
+      // New message text for sending a message
+      newMessage: "",
     };
   },
   computed: {
@@ -149,7 +177,6 @@ export default {
         user.name.toLowerCase().includes(this.userSearch.toLowerCase())
       );
     },
-
     filteredUsersForGroup() {
       if (!this.selectedConversationDetails) return [];
       // Only show users that are not already participants in the group
@@ -157,12 +184,10 @@ export default {
       if (!this.newMembersSearch) {
         return this.otherUsers.filter(user => !currentMembers.includes(user.id));
       }
-      return this.otherUsers.filter(user => {
-        return (
-          !currentMembers.includes(user.id) &&
-          user.name.toLowerCase().includes(this.newMembersSearch.toLowerCase())
-        );
-      });
+      return this.otherUsers.filter(user =>
+        !currentMembers.includes(user.id) &&
+        user.name.toLowerCase().includes(this.newMembersSearch.toLowerCase())
+      );
     },
   },
   methods: {
@@ -201,6 +226,8 @@ export default {
       this.selectedNewMemberIds = [];
       this.showChangeGroupName = false;
       this.newGroupName = "";
+      this.messages = [];
+      this.newMessage = "";
       this.msg = "Logged out successfully";
     },
     // Change the user’s name.
@@ -232,7 +259,7 @@ export default {
     },
     // Fetch the conversations list for the logged-in user.
     async fetchConversations() {
-      if (!this.securityKey) {
+      if (!this.securityKey) { 
         this.msg = "Authorization key is missing. Please log in.";
         return;
       }
@@ -241,7 +268,6 @@ export default {
           headers: { Authorization: `Bearer ${this.securityKey}` },
         });
         let conversationIds = convIdsResponse.data.conversations;
-        // If it's not an array (for example, null), default to an empty array.
         if (!Array.isArray(conversationIds)) {
           console.log("Received conversation data:", convIdsResponse.data);
           conversationIds = [];
@@ -308,7 +334,6 @@ export default {
         return;
       }
       try {
-        // Include the logged-in user's id along with the selected users.
         const conversationUserIds = [this.userId, ...this.selectedUserIds];
         const response = await this.$axios.put(
           "/new_conversation",
@@ -321,11 +346,9 @@ export default {
           }
         );
         this.msg = "New conversation created successfully!";
-        // Clear the new conversation UI.
         this.selectedUserIds = [];
         this.userSearch = "";
         this.showNewConversation = false;
-        // Refresh the conversation list to include the new conversation.
         await this.fetchConversations();
       } catch (error) {
         this.msg =
@@ -345,7 +368,6 @@ export default {
           headers: { Authorization: `Bearer ${this.securityKey}` },
         });
         const participants = response.data.participants || [];
-        // Map each participant ID to a user object (using otherUsers list or fallback to the logged-in user).
         const memberNames = participants.map((participantId) => {
           let user = this.otherUsers.find((u) => u.id === participantId);
           if (!user && participantId === this.userId) {
@@ -362,13 +384,59 @@ export default {
           participants,
           memberNames,
         };
+
+        // Update: use the "messages" key (an array of numeric IDs) from the backend response.
+        const messageIds = response.data.messages || [];
+        if (messageIds.length) {
+          await this.fetchMessages(conversation.id, messageIds);
+        } else {
+          this.messages = [];
+        }
       } catch (error) {
         this.msg =
           "Failed to fetch conversation details: " +
           (error.response?.data?.error || error.message);
       }
     },
-
+    async fetchMessages(conversationId, messageIds) {
+      try {
+        const requests = messageIds.map(messageId =>
+          this.$axios.get(`/conversations/${conversationId}/messages/${messageId}`, {
+            headers: { Authorization: `Bearer ${this.securityKey}` },
+          })
+        );
+        const responses = await Promise.all(requests);
+        this.messages = responses.map(response => response.data);
+      } catch (error) {
+        this.msg = "Failed to fetch messages: " + (error.response?.data?.error || error.message);
+      }
+    },
+    // Send a message to the current conversation.
+    async sendMessage() {
+      if (!this.newMessage.trim()) return;
+      try {
+        await this.$axios.post(
+          `/conversations/${this.selectedConversationDetails.id}`,
+          { message: this.newMessage },
+          {
+            headers: {
+              Authorization: `Bearer ${this.securityKey}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        this.newMessage = "";
+        // Refresh the conversation details (and messages)
+        await this.selectConversation({
+          id: this.selectedConversationDetails.id,
+          name: this.selectedConversationDetails.name,
+        });
+      } catch (error) {
+        this.msg =
+          "Failed to send message: " +
+          (error.response?.data?.error || error.message);
+      }
+    },
     // Option 1: Leave Group
     async leaveGroup() {
       try {
@@ -376,9 +444,9 @@ export default {
           headers: { Authorization: `Bearer ${this.securityKey}` },
         });
         this.msg = "Successfully left the group!";
-        // Refresh the conversation list and clear the selected conversation
         await this.fetchConversations();
         this.selectedConversationDetails = null;
+        this.messages = [];
       } catch (error) {
         if (error.response && error.response.status === 403) {
           this.msg = "Not a group";
@@ -387,15 +455,12 @@ export default {
         }
       }
     },
-
     // Option 2: Toggle Add Members UI
     toggleAddMembers() {
       this.showAddMembers = !this.showAddMembers;
-      // Reset the add members form
       this.newMembersSearch = "";
       this.selectedNewMemberIds = [];
     },
-
     // Option 2: Confirm Adding New Members
     async confirmAddMembers() {
       if (!this.selectedNewMemberIds.length) {
@@ -414,7 +479,6 @@ export default {
           }
         );
         this.msg = "Members added successfully!";
-        // Optionally refresh conversation details
         await this.selectConversation({
           id: this.selectedConversationDetails.id,
           name: this.selectedConversationDetails.name,
@@ -428,20 +492,17 @@ export default {
         }
       }
     },
-
     // Option 2: Cancel Add Members UI
     cancelAddMembers() {
       this.showAddMembers = false;
       this.newMembersSearch = "";
       this.selectedNewMemberIds = [];
     },
-
     // Option 3: Toggle Change Group Name UI
     toggleChangeGroupName() {
       this.showChangeGroupName = !this.showChangeGroupName;
       this.newGroupName = "";
     },
-
     // Option 3: Confirm Changing Group Name
     async confirmChangeGroupName() {
       if (!this.newGroupName) {
@@ -460,10 +521,8 @@ export default {
           }
         );
         this.msg = "Group name changed successfully!";
-        // Update the conversation details with the new name
         this.selectedConversationDetails.name = this.newGroupName;
         this.cancelChangeGroupName();
-        // Refresh conversation list if needed
         await this.fetchConversations();
       } catch (error) {
         if (error.response && error.response.status === 403) {
@@ -473,22 +532,32 @@ export default {
         }
       }
     },
-
     // Option 3: Cancel Change Group Name UI
     cancelChangeGroupName() {
       this.showChangeGroupName = false;
       this.newGroupName = "";
+    },
+    // Helper method to format the timestamp
+    formatTimestamp(timestamp) {
+      return new Date(timestamp).toLocaleString();
+    },
+    // Helper method to convert sender ID to sender name
+    getSenderName(senderId) {
+      if (senderId === this.userId) {
+        return this.username;
+      }
+      if (this.selectedConversationDetails && this.selectedConversationDetails.memberNames) {
+        const member = this.selectedConversationDetails.memberNames.find(m => m.id === senderId);
+        if (member) return member.name;
+      }
+      const foundUser = this.otherUsers.find(user => user.id === senderId);
+      return foundUser ? foundUser.name : "Unknown";
     },
   },
 };
 </script>
 
 <style>
-.app-container {
-  display: flex;
-  min-height: 100vh;
-}
-
 /* Left Panel (Sidebar) */
 .sidebar {
   width: 300px;
@@ -536,22 +605,47 @@ export default {
   padding-top: 10px;
   border-top: 1px solid #ccc;
 }
-
 .group-options h3 {
   margin-bottom: 10px;
 }
-
 .group-options button {
   margin-right: 5px;
   margin-bottom: 5px;
   padding: 5px 10px;
   cursor: pointer;
 }
-
 .leave-group {
   background-color: red;
   color: white;
   border: none;
+}
+
+/* Styles for Messages Section */
+.messages {
+  margin-top: 20px;
+}
+.messages ul {
+  list-style: none;
+  padding: 0;
+}
+.messages li {
+  padding: 5px 0;
+  border-bottom: 1px solid #ccc;
+}
+
+/* Styles for Message Sending Section */
+.message-sending {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+}
+.message-sending input {
+  flex: 1;
+  padding: 8px;
+  margin-right: 10px;
+}
+.message-sending button {
+  padding: 8px 16px;
 }
 </style>
 

@@ -19,7 +19,7 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.GET("/conversations", rt.wrap(rt.getMyConversations))
 	rt.router.GET("/conversations/:convid", rt.wrap(rt.getConversation))
 
-	rt.router.POST("/conversations/:convid/", rt.wrap(rt.sendMessage))
+	rt.router.POST("/conversations/:convid", rt.wrap(rt.sendMessage))
 	rt.router.DELETE("/conversations/:convid/messages/:messageId", rt.wrap(rt.deleteMessage))
 	rt.router.POST("/conversations/:convid/messages/:messageId", rt.wrap(rt.forwardMessage))
 	rt.router.DELETE("/conversations/:convid/messages/:messageId/comments", rt.wrap(rt.uncommentMessage))
@@ -34,7 +34,7 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.PUT("/conversations/:convid/members", rt.wrap(rt.addToGroup))
 	rt.router.DELETE("/conversations/:convid/members", rt.wrap(rt.leaveGroup))
 
-	rt.router.GET("/liveness", rt.liveness) // *
+	rt.router.GET("/liveness", rt.liveness)
 
 	return rt.router
 }

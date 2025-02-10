@@ -56,7 +56,7 @@ func (rt *_router) getMessage(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 
-	m_id_param := ps.ByName("MessageId")
+	m_id_param := ps.ByName("messageId")
 
 	m_id, err := strconv.Atoi(m_id_param)
 	if err != nil {
@@ -92,23 +92,23 @@ func (rt *_router) getMessage(w http.ResponseWriter, r *http.Request, ps httprou
 	}
 
 	response := struct {
-		stringContent  string    `json:"stringContent"`
-		senderId       int       `json:"senderId"`
-		timestamp      time.Time `json:"timestamp"`
-		seen           []int     `json:"seen"`
-		forwarded      bool      `json:"forwarded"`
-		photoContent   bool      `json:"photoContent"`
-		comments       []string  `json:"comments"`
-		comment_owners []int     `json:"comment_owners"`
+		StringContent string    `json:"stringContent"`
+		SenderId      int       `json:"senderId"`
+		Timestamp     time.Time `json:"timestamp"`
+		Seen          []int     `json:"seen"`
+		Forwarded     bool      `json:"forwarded"`
+		PhotoContent  bool      `json:"photoContent"`
+		Comments      []string  `json:"comments"`
+		CommentOwners []int     `json:"comment_owners"`
 	}{
-		stringContent:  content,
-		senderId:       sender_id,
-		timestamp:      stamp,
-		seen:           seenList,
-		forwarded:      fwded,
-		photoContent:   false,
-		comments:       commentList,
-		comment_owners: ownersList,
+		StringContent: content,
+		SenderId:      sender_id,
+		Timestamp:     stamp,
+		Seen:          seenList,
+		Forwarded:     fwded,
+		PhotoContent:  false,
+		Comments:      commentList,
+		CommentOwners: ownersList,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

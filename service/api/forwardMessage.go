@@ -67,7 +67,7 @@ func (rt *_router) forwardMessage(w http.ResponseWriter, r *http.Request, ps htt
 		return
 	}
 
-	m_id_param := ps.ByName("MessageId")
+	m_id_param := ps.ByName("messageId")
 
 	m_id, err := strconv.Atoi(m_id_param)
 	if err != nil {
