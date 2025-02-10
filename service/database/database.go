@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 )
 
 type AppDatabase interface {
@@ -34,6 +35,20 @@ type AppDatabase interface {
 
 	GetUserConversations(userID int) ([]int, error)
 	GetConversationUsers(conv_id int) ([]int, error)
+	GetConversationMessages(conv_id int) ([]int, error)
+	
+	SendMessage(senderID int, convID int, textContent string, forwarded bool, timestamp time.Time) error
+	GetMessage(m_id int) (int, string, bool, time.Time, error)
+	DeleteMessage(m_id int) error
+	
+	SeeMessage(user_id int, m_id int) error
+	ReceiveMessage(user_id int, m_id int) error
+
+	GetMessageSeenList(m_id int) ([]int, error)
+	GetMessageCommentList(m_id int) ([]int, []string, error)
+
+	AddComment(sender_id int, m_id int, content string) error	
+	RemoveComment(sender_id int, m_id int) error
 }
 
 type appdbimpl struct {
@@ -82,7 +97,6 @@ func New(db *sql.DB) (AppDatabase, error) {
 				   content TEXT,
 				   gif_photo BLOB,
 				   sender_id INTEGER NOT NULL,
-				   checkmark TEXT NOT NULL,
 				   timestamp DATETIME NOT NULL,
 				   forwarded BOOL, 
 				   FOREIGN KEY (conv_id) REFERENCES Conversations(id),
@@ -90,6 +104,20 @@ func New(db *sql.DB) (AppDatabase, error) {
 				   );`
 	if _, err := db.Exec(messagesTableStmt); err != nil {
 		return nil, fmt.Errorf("error creating Messages table: %w", err)
+	}
+
+	seenListStmt := `CREATE TABLE IF NOT EXISTS SeenList (
+					 m_id INTEGER NOT NULL,
+					 user_id INTEGER NOT NULL,
+					 comment TEXT,
+					 seen BOOL,
+					 received BOOL,
+					 PRIMARY KEY (m_id, user_id),
+					 FOREIGN KEY (m_id) REFERENCES Messages(id),
+					 FOREIGN KEY (user_id) REFERENCES Users(id)
+					 );`
+	if _, err := db.Exec(seenListStmt); err != nil {
+		return nil, fmt.Errorf("error creating SeenList table: %w", err)
 	}
 
 	return &appdbimpl{

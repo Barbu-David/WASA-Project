@@ -68,6 +68,14 @@ func (rt *_router) setMyUserName(w http.ResponseWriter, r *http.Request, ps http
 		return
 	}
 
+	name_taken, err := rt.db.CheckIfUserExists(requestBody.Name)
+	
+	if name_taken != false || err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Username taken"})
+		return
+	}
+
 	err = rt.db.SetUserName(requestedUserID, requestBody.Name)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

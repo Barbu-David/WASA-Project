@@ -392,6 +392,19 @@ paths:
                     maxItems: 10000
                     items:
                       $ref: '#/components/schemas/MessageId'
+                  preview:
+                    type: string
+                    description: conversation preview message string
+                    minLength: 1
+                    maxLength: 20
+                    pattern: ^.*?$
+                    example: :)
+                  photo_preview:
+                   type: boolean
+                   description: if a conversation has a photo preview
+                  is_group:
+                    type: boolean
+                    description: if it is a group
         '400':
           description: Invalid request due to malformed parameters.
           content:
@@ -591,8 +604,13 @@ paths:
                photoContent:
                 type: boolean
                 description: "True if the message is a photo"
-               comment:
-                 $ref: '#/components/schemas/MessageString'
+               comments:
+                 type: array
+                 minItems: 0
+                 maxItems: 10000
+                 description: Comments from a message
+                 items:
+                  $ref: '#/components/schemas/MessageString'
        '400':
          description: Invalid request due to malformed parameters.
          content:
