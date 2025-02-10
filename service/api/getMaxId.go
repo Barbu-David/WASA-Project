@@ -24,6 +24,7 @@ func (rt *_router) getMaxId(w http.ResponseWriter, r *http.Request, ps httproute
 	if token == "" { //The user should be able to get the name of any user, he just needs to have a valid token
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Empty token"})
+		return
 	}
 
 	maxID, err := rt.db.GetMaxUserID()

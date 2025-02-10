@@ -23,6 +23,7 @@ func (rt *_router) getMyUserName(w http.ResponseWriter, r *http.Request, ps http
 	if token == "" {
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Empty token"})
+		return
 	}
 	// Extract the user ID from the URL path
 	userIDParam := ps.ByName("id")

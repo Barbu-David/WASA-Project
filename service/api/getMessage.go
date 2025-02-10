@@ -1,13 +1,123 @@
 package api
 
 import (
+	"encoding/json"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
-	// "encoding/json"
-	// "image/gif"
-	// time"
+	"strconv"
 	"wasatext/service/api/reqcontext"
+	"time"
 )
 
 func (rt *_router) getMessage(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
+	authHeader := r.Header.Get("Authorization")
+
+	const bearerPrefix = "Bearer "
+	if len(authHeader) <= len(bearerPrefix) || authHeader[:len(bearerPrefix)] != bearerPrefix {
+		w.WriteHeader(http.StatusUnauthorized)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid authorization format"})
+		return
+	}
+
+	token := authHeader[len(bearerPrefix):]
+
+	if token == "" {
+		w.WriteHeader(http.StatusUnauthorized)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Empty token"})
+		return
+	}
+
+	conv_id_param := ps.ByName("convid")
+
+	conv_id, err := strconv.Atoi(conv_id_param)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid conversation id"})
+		return
+	}
+
+	// User must exist
+
+	user_id, err := rt.db.GetUserIDbyKey(token)
+
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Auth error"})
+		return
+		}
+
+	// And be a member of the conversation
+
+	member, err := rt.db.IsMemberConversation(user_id, conv_id)
+
+	if err != nil || member != true {
+		w.WriteHeader(http.StatusUnauthorized)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Auth error"})
+		return
+	}
+
+        m_id_param := ps.ByName("MessageId")
+
+        m_id, err := strconv.Atoi(m_id_param)
+        if err != nil {
+                w.WriteHeader(http.StatusBadRequest)
+                _ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid mid"})
+                return
+        }
+
+	//DB calls
+
+	sender_id, content, fwded, stamp, err := rt.db.GetMessage(m_id)
+
+	if  err != nil {
+                w.WriteHeader(http.StatusInternalServerError)
+                _ = json.NewEncoder(w).Encode(map[string]string{"error": "Error"})
+                ctx.Logger.WithError(err).Error("Database failed")
+        }
+
+
+	seenList, err := rt.db.GetMessageSeenList(m_id)
+
+	if  err != nil {
+                w.WriteHeader(http.StatusInternalServerError)
+                _ = json.NewEncoder(w).Encode(map[string]string{"error": "Error"})
+                ctx.Logger.WithError(err).Error("Database failed")
+        }
+
+	ownersList, commentList, err := rt.db.GetMessageCommentList(m_id)
+
+	if  err != nil {
+                w.WriteHeader(http.StatusInternalServerError)
+                _ = json.NewEncoder(w).Encode(map[string]string{"error": "Error"})
+                ctx.Logger.WithError(err).Error("Database failed")
+        }
+
+        response := struct {
+                stringContent string `json:"stringContent"`
+		senderId int `json:"senderId"`
+ 		timestamp time.Time `json:"timestamp"`
+		seen []int `json:"seen"` 
+		forwarded bool `json:"forwarded"` 
+		photoContent bool `json:"photoContent"` 
+		comments []string `json:"comments"` 
+		comment_owners []int `json:"comment_owners"` 
+
+        }{
+                stringContent: content,
+                senderId: sender_id,
+		timestamp: stamp,
+		seen: seenList,
+		forwarded: fwded,
+		photoContent: false,
+		comments: commentList,
+		comment_owners: ownersList,
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        w.WriteHeader(http.StatusOK)
+        if err := json.NewEncoder(w).Encode(response); err != nil {
+                w.WriteHeader(http.StatusInternalServerError)
+                _ = json.NewEncoder(w).Encode(map[string]string{"error": "Error encoding response"})
+                ctx.Logger.WithError(err).Error("Encoding failed")
+        }
 }

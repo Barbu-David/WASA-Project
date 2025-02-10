@@ -23,6 +23,7 @@ func (rt *_router) getGroupName(w http.ResponseWriter, r *http.Request, ps httpr
 	if token == "" {
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Empty token"})
+		return
 	}
 
 	conv_id_param := ps.ByName("convid")
@@ -41,6 +42,7 @@ func (rt *_router) getGroupName(w http.ResponseWriter, r *http.Request, ps httpr
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Auth error"})
+		return
 	}
 
 	// And be a member of the conversation
@@ -50,6 +52,7 @@ func (rt *_router) getGroupName(w http.ResponseWriter, r *http.Request, ps httpr
 	if err != nil || member != true {
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Auth error"})
+		return
 	}
 
 	groupname, err := rt.db.GetConversationName(conv_id)
@@ -58,6 +61,7 @@ func (rt *_router) getGroupName(w http.ResponseWriter, r *http.Request, ps httpr
 		w.WriteHeader(http.StatusInternalServerError)
 		ctx.Logger.WithError(err).Error("Database fail")
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Failed to get name"})
+		return
 	}
 
 	// Respond with the username

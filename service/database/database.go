@@ -49,6 +49,7 @@ type AppDatabase interface {
 
 	AddComment(sender_id int, m_id int, content string) error	
 	RemoveComment(sender_id int, m_id int) error
+
 }
 
 type appdbimpl struct {

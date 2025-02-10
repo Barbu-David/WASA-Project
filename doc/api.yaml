@@ -535,8 +535,6 @@ paths:
              description: an object containing the message and the convo it will be forwarded to
              type: object
              properties:
-               messageId:
-                 $ref: '#/components/schemas/MessageId'
                targetConversationId:
                  $ref: '#/components/schemas/ConversationId'
      security:
@@ -611,6 +609,13 @@ paths:
                  description: Comments from a message
                  items:
                   $ref: '#/components/schemas/MessageString'
+               comment_owners:
+                 type: array
+                 minItems: 0
+                 maxItems: 10000
+                 description: Comments owners from a message
+                 items:
+                  $ref: '#/components/schemas/UserId'
        '400':
          description: Invalid request due to malformed parameters.
          content:

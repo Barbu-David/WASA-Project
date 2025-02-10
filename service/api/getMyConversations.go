@@ -22,6 +22,7 @@ func (rt *_router) getMyConversations(w http.ResponseWriter, r *http.Request, ps
 	if token == "" {
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Empty token"})
+		return
 	}
 
 	// User must exist
@@ -31,6 +32,7 @@ func (rt *_router) getMyConversations(w http.ResponseWriter, r *http.Request, ps
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Auth error"})
+		return
 	}
 
 	userConversations, err := rt.db.GetUserConversations(user_id)

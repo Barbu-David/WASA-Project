@@ -23,6 +23,7 @@ func (rt *_router) getConversation(w http.ResponseWriter, r *http.Request, ps ht
 	if token == "" {
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Empty token"})
+		return
 	}
 
 	// Extract the user ID from the URL path
@@ -43,6 +44,7 @@ func (rt *_router) getConversation(w http.ResponseWriter, r *http.Request, ps ht
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Auth error"})
+		return
 	}
 
 	// And be a member of the conversation
@@ -52,6 +54,7 @@ func (rt *_router) getConversation(w http.ResponseWriter, r *http.Request, ps ht
 	if err != nil || member != true {
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Auth error"})
+		return
 	}
 
 	participants, err := rt.db.GetConversationUsers(conv_id)
