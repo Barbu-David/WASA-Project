@@ -67,27 +67,43 @@ func (rt *_router) getMessage(w http.ResponseWriter, r *http.Request, ps httprou
 
 	//DB calls
 
-	sender_id, content, fwded, stamp, err := rt.db.GetMessage(m_id)
+	err = rt.db.SeeMessage(user_id, m_id)
 
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Error"})
 		ctx.Logger.WithError(err).Error("Database failed")
 	}
 
-	seenList, err := rt.db.GetMessageSeenList(m_id)
+	mark1, err := rt.db.IsDeliveredToAll(m_id)
 
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Error"})
+		ctx.Logger.WithError(err).Error("Database failed")
+	}
+
+	mark2, err := rt.db.IsSeenByAll(m_id)
+
+	if err != nil {
+		ctx.Logger.WithError(err).Error("Database failed")
+	}
+
+	var mark string
+
+	if mark2 != false {
+		mark = "✓✓"
+	} else if mark1 != false {
+		mark = "✓"
+	} else {
+		mark = "..."
+	}
+
+	sender_id, content, fwded, stamp, err := rt.db.GetMessage(m_id)
+
+	if err != nil {
 		ctx.Logger.WithError(err).Error("Database failed")
 	}
 
 	ownersList, commentList, err := rt.db.GetMessageCommentList(m_id)
 
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Error"})
 		ctx.Logger.WithError(err).Error("Database failed")
 	}
 
@@ -95,7 +111,7 @@ func (rt *_router) getMessage(w http.ResponseWriter, r *http.Request, ps httprou
 		StringContent string    `json:"stringContent"`
 		SenderId      int       `json:"senderId"`
 		Timestamp     time.Time `json:"timestamp"`
-		Seen          []int     `json:"seen"`
+		Checkmark     string    `json:"checkmark"`
 		Forwarded     bool      `json:"forwarded"`
 		PhotoContent  bool      `json:"photoContent"`
 		Comments      []string  `json:"comments"`
@@ -104,7 +120,7 @@ func (rt *_router) getMessage(w http.ResponseWriter, r *http.Request, ps httprou
 		StringContent: content,
 		SenderId:      sender_id,
 		Timestamp:     stamp,
-		Seen:          seenList,
+		Checkmark:     mark,
 		Forwarded:     fwded,
 		PhotoContent:  false,
 		Comments:      commentList,

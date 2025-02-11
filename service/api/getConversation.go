@@ -82,6 +82,16 @@ func (rt *_router) getConversation(w http.ResponseWriter, r *http.Request, ps ht
 		return
 	}
 
+	for _, value := range messages {
+		err = rt.db.ReceiveMessage(user_id, value)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			ctx.Logger.WithError(err).Error("Database error retrieving conversation users")
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "InternalServerError"})
+			return
+		}
+
+	}
 	response := struct {
 		Participants []int  `json:"participants"`
 		Messages     []int  `json:"messages"`

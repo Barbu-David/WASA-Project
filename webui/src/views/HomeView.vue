@@ -64,7 +64,7 @@
     <!-- Right Panel: Conversation Details with Group Options -->
     <div class="conversation-details" v-if="selectedConversationDetails">
       <h1>{{ selectedConversationDetails.name }}</h1>
-      <h3>
+      <h3 v-if="selectedConversationDetails.isGroup">
         Members:
         <span
           v-for="(member, index) in selectedConversationDetails.memberNames"
@@ -112,26 +112,35 @@
       </div>
 
       <!-- Messages Section -->
-      <div class="messages">
-        <h3>Messages</h3>
-        <div v-if="messages.length === 0">No messages in conversation</div>
-        <ul v-else>
-          <li v-for="(message, index) in messages" :key="index">
+<!-- Messages Section -->
+    <div class="messages">
+      <h3>Messages</h3>
+      <div v-if="messages.length === 0">No messages in conversation</div>
+      <ul v-else>
+        <li v-for="(message, index) in messages" :key="index">
+      <!-- Display sender name differently based on whether it's the logged-in user -->
+          <span v-if="message.senderId === userId">
+            <strong style="color: blue;">{{ getSenderName(message.senderId) }}</strong>
+          </span>
+          <span v-else>
             <strong>{{ getSenderName(message.senderId) }}</strong>
-            ({{ message.timestamp ? formatTimestamp(message.timestamp) : 'No timestamp' }}):
-            <br />
-            <span>{{ message.stringContent || '[No content]' }}</span>
-            <!-- Only show the delete button for messages sent by the logged-in user -->
-            <button
-              v-if="message.senderId === userId"
-              @click="deleteMessage(message)"
-              style="background-color: red; color: white; border: none; margin-left: 10px; cursor: pointer;"
-            >
-              Delete
-            </button>
-          </li>
-        </ul>
-      </div>
+          </span>
+          ({{ message.timestamp ? formatTimestamp(message.timestamp) : 'No timestamp' }}):
+          <br />
+          <span>{{ message.stringContent || '[No content]' }}</span>
+          <span v-if="message.senderId === userId && message.checkmark" 
+                style="margin-left: 5px; color: green;">
+            {{ message.checkmark }}
+          </span>
+          <button
+            @click="deleteMessage(message)"
+            style="background-color: red; color: white; border: none; margin-left: 10px; cursor: pointer;"
+          >
+            Delete
+          </button>
+        </li>
+      </ul>
+    </div>
 
       <!-- Message Sending Section -->
       <div class="message-sending">

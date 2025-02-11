@@ -44,11 +44,13 @@ type AppDatabase interface {
 	SeeMessage(user_id int, m_id int) error
 	ReceiveMessage(user_id int, m_id int) error
 
-	GetMessageSeenList(m_id int) ([]int, error)
 	GetMessageCommentList(m_id int) ([]int, []string, error)
 
 	AddComment(sender_id int, m_id int, content string) error
 	RemoveComment(sender_id int, m_id int) error
+
+	IsSeenByAll(m_id int) (bool, error)
+	IsDeliveredToAll(m_id int) (bool, error)
 }
 
 type appdbimpl struct {

@@ -589,13 +589,8 @@ paths:
                 format: date-time
                 description: The time the message was sent.
                 example: "2024-11-27T10:00:00Z"
-               seen:
-                 type: array
-                 minItems: 0
-                 maxItems: 10000
-                 description: user id that saw the message
-                 items:
-                  $ref: '#/components/schemas/UserId'
+               checkmark:
+                  $ref: '#/components/schemas/MessageString'
                forwarded:
                 type: boolean
                 description: "True if the message is forwarded"
