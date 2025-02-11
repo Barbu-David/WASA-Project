@@ -85,15 +85,15 @@ func (rt *_router) getConversation(w http.ResponseWriter, r *http.Request, ps ht
 	response := struct {
 		Participants []int  `json:"participants"`
 		Messages     []int  `json:"messages"`
-		photoPreview bool   `json:"photo_preview"`
+		PhotoPreview bool   `json:"photo_preview"`
 		Preview      string `json:"preview"`
-		isGroup      bool   `json:"is_group"`
+		IsGroup      bool   `json:"is_group"`
 	}{
 		Participants: participants,
 		Messages:     messages,
 		Preview:      ":=)",
-		isGroup:      is_group,
-		photoPreview: false,
+		IsGroup:      is_group,
+		PhotoPreview: false,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

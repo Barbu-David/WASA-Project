@@ -27,7 +27,11 @@
               @click="selectConversation(conversation)"
               :class="{ selected: selectedConversationDetails && selectedConversationDetails.id === conversation.id }"
             >
-              {{ conversation.name }}
+              <div>{{ conversation.name }}</div>
+              <div class="preview">
+                <span v-if="conversation.photoPreview">🖼️</span>
+                <span v-else>{{ conversation.preview }}</span>
+              </div>
             </li>
           </ul>
         </div>
@@ -70,8 +74,8 @@
         </span>
       </h3>
 
-      <!-- Group Options -->
-      <div class="group-options">
+      <!-- Group Options: shown only if this is a group conversation -->
+      <div class="group-options" v-if="selectedConversationDetails.isGroup">
         <h3>Options</h3>
         <!-- Option 1: Leave Group (red button) -->
         <button class="leave-group" style="background-color: red; color: white;" @click="leaveGroup">
@@ -179,7 +183,7 @@ export default {
     },
     filteredUsersForGroup() {
       if (!this.selectedConversationDetails) return [];
-      // Only show users that are not already participants in the group
+      // Only show users that are not already participants in the conversation
       const currentMembers = this.selectedConversationDetails.participants || [];
       if (!this.newMembersSearch) {
         return this.otherUsers.filter(user => !currentMembers.includes(user.id));
@@ -191,7 +195,7 @@ export default {
     },
   },
   methods: {
-    // Log in the user, then fetch conversations and the list of other users.
+    // Log in the user. We now fetch users first so that conversation names for one-on-one chats can be computed.
     async loginUser() {
       try {
         const response = await this.$axios.post("/session", { name: this.username });
@@ -202,9 +206,9 @@ export default {
         this.userId = response.data.userId;
         this.msg = "Logged in successfully";
 
-        // Fetch conversations and user list (for conversation creation & member names)
-        await this.fetchConversations();
+        // Fetch users first, then conversations
         await this.fetchUsers();
+        await this.fetchConversations();
       } catch (e) {
         this.msg = "Login failed: " + e.message;
       }
@@ -273,7 +277,7 @@ export default {
           conversationIds = [];
         }
         const convs = [];
-        for (const convId of conversationIds) {
+         for (const convId of conversationIds) {
           try {
             const convNameResponse = await this.$axios.get(`/conversations/${convId}/name`, {
               headers: { Authorization: `Bearer ${this.securityKey}` },
@@ -287,10 +291,11 @@ export default {
             convs.push({ id: convId, name: "Unknown" });
           }
         }
-        this.conversations = convs;
-      } catch (e) {
-        this.msg = "Failed to fetch conversations: " + e.message;
-      }
+        this.conversations = convs;  
+	} catch (err) {
+            console.error(`Failed to fetch conversation ${convId}:`, err);
+            convs.push({ id: convId, name: "Unknown", preview: "", photoPreview: false, isGroup: true, participants: [] });
+          }
     },
     // Fetch the list of all users (excluding the logged-in user) for conversation creation.
     async fetchUsers() {
@@ -369,7 +374,7 @@ export default {
         });
         const participants = response.data.participants || [];
         const memberNames = participants.map((participantId) => {
-          let user = this.otherUsers.find((u) => u.id === participantId);
+          let user = this.otherUsers.find(u => u.id === participantId);
           if (!user && participantId === this.userId) {
             user = { id: participantId, name: this.username };
           }
@@ -378,14 +383,26 @@ export default {
           }
           return user;
         });
+        const isGroup = response.data.is_group !== undefined
+          ? response.data.is_group
+          : (participants.length > 2);
+        let conversationName = conversation.name; // default from conversation list
+        if (!isGroup) {
+          const otherId = participants.find(id => id !== this.userId);
+          const otherMember = memberNames.find(member => member.id === otherId) ||
+                              this.otherUsers.find(user => user.id === otherId);
+          conversationName = otherMember ? otherMember.name : "Unknown";
+        }
         this.selectedConversationDetails = {
           id: conversation.id,
-          name: conversation.name,
+          name: conversationName,
           participants,
           memberNames,
+          isGroup,
+          preview: response.data.preview,
+          photoPreview: response.data.photo_preview,
         };
 
-        // Update: use the "messages" key (an array of numeric IDs) from the backend response.
         const messageIds = response.data.messages || [];
         if (messageIds.length) {
           await this.fetchMessages(conversation.id, messageIds);
@@ -590,6 +607,10 @@ export default {
   margin-top: 15px;
   max-height: 200px;
   overflow-y: auto;
+}
+.preview {
+  font-size: 0.8em;
+  color: #555;
 }
 
 /* Right Panel (Conversation Details) */
