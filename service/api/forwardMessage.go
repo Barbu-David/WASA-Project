@@ -52,12 +52,12 @@ func (rt *_router) forwardMessage(w http.ResponseWriter, r *http.Request, ps htt
 
 	if err != nil || member != true {
 		w.WriteHeader(http.StatusUnauthorized)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Auth error"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Auth error2"})
 		return
 	}
 
 	var requestBody struct {
-		targetConversationId int `json:"targetConversationId"`
+		TargetConversationId int `json:"targetConversationId"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
@@ -85,19 +85,8 @@ func (rt *_router) forwardMessage(w http.ResponseWriter, r *http.Request, ps htt
 		return
 	}
 
-	//The user must also be part of the target conversation
 
-	member, err = rt.db.IsMemberConversation(user_id, requestBody.targetConversationId)
-
-	if err != nil || member != true {
-		w.WriteHeader(http.StatusUnauthorized)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Auth error"})
-		return
-	}
-
-	//DB call
-
-	err = rt.db.SendMessage(user_id, requestBody.targetConversationId, m_content, true, globaltime.Now())
+	err = rt.db.SendMessage(user_id, requestBody.TargetConversationId, m_content, true, globaltime.Now())
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

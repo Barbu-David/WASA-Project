@@ -65,8 +65,6 @@ func (rt *_router) getMessage(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 
-	//DB calls
-
 	err = rt.db.SeeMessage(user_id, m_id)
 
 	if err != nil {

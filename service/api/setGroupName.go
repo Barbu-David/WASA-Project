@@ -55,7 +55,6 @@ func (rt *_router) setGroupName(w http.ResponseWriter, r *http.Request, ps httpr
 		return
 	}
 
-	//Extract the new name
 	var requestBody struct {
 		Name string `json:"name"`
 	}

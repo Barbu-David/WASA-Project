@@ -81,8 +81,6 @@ func (rt *_router) commentMessage(w http.ResponseWriter, r *http.Request, ps htt
 		return
 	}
 
-	//DB call
-
 	err = rt.db.AddComment(user_id, m_id, requestBody.comment)
 
 	if err != nil {

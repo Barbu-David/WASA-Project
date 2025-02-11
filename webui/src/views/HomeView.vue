@@ -111,55 +111,88 @@
         </div>
       </div>
 
-     <!-- Message Sending Section -->
-    <div class="message-sending" v-if="securityKey && selectedConversationDetails">
-      <input
-        v-model="newMessage"
-        placeholder="Type your message here"
-        @keyup.enter="sendMessage"
-      />
-      <button @click="sendMessage">Send</button>
+      <!-- Message Sending Section -->
+      <div class="message-sending" v-if="securityKey && selectedConversationDetails">
+        <input
+          v-model="newMessage"
+          placeholder="Type your message here"
+          @keyup.enter="sendMessage"
+        />
+        <button @click="sendMessage">Send</button>
+      </div>
+
+      <!-- Messages Section -->
+      <div class="messages" v-if="securityKey && selectedConversationDetails">
+        <h3>Messages</h3>
+        <div v-if="reversedMessages.length === 0">No messages in conversation</div>
+        <ul v-else>
+          <li v-for="(message, index) in reversedMessages" :key="index">
+            <!-- Display sender name only for messages from others -->
+            <span v-if="message.senderId !== userId">
+              <strong>{{ getSenderName(message.senderId) }}</strong>
+            </span>
+            <!-- For the logged-in user's messages, no sender name is shown -->
+            <span v-else></span>
+            ({{ message.timestamp ? formatTimestamp(message.timestamp) : 'No timestamp' }}):
+            <br />
+            <!-- Display message content in blue for the logged-in user's messages, normal otherwise -->
+            <span v-if="message.senderId === userId" style="color: blue;">
+              {{ message.stringContent || '[No content]' }}
+            </span>
+            <span v-else>
+              {{ message.stringContent || '[No content]' }}
+            </span>
+            <!-- Display checkmark for the logged-in user's message if available -->
+            <span v-if="message.senderId === userId && message.checkmark" style="margin-left: 5px; color: green;">
+              {{ message.checkmark }}
+            </span>
+            <!-- Display forwarded tag if the message has been forwarded -->
+            <span v-if="message.forwarded" class="forwarded-tag">Forwarded</span>
+            <!-- Action buttons: Delete and Forward -->
+            <button
+              @click="deleteMessage(message)"
+              style="background-color: red; color: white; border: none; margin-left: 10px; cursor: pointer;"
+            >
+              Delete
+            </button>
+            <button
+              @click="openForwardUI(message)"
+              style="background-color: green; color: white; border: none; margin-left: 5px; cursor: pointer;"
+            >
+              Forward
+            </button>
+          </li>
+        </ul>
+      </div>
     </div>
 
-    <!-- Messages Section -->
-    <div class="messages" v-if="securityKey && selectedConversationDetails">
-      <h3>Messages</h3>
-      <div v-if="reversedMessages.length === 0">No messages in conversation</div>
-      <ul v-else>
-        <li v-for="(message, index) in reversedMessages" :key="index">
-          <!-- Display sender name only for messages from others -->
-          <span v-if="message.senderId !== userId">
-            <strong>{{ getSenderName(message.senderId) }}</strong>
-          </span>
-          <!-- For the logged-in user's messages, no sender name is shown -->
-          <span v-else>
-          </span>
-          ({{ message.timestamp ? formatTimestamp(message.timestamp) : 'No timestamp' }}):
-          <br />
-          <!-- Display message content in blue for the logged-in user's messages, normal otherwise -->
-          <span v-if="message.senderId === userId" style="color: blue;">
-            {{ message.stringContent || '[No content]' }}
-          </span>
-          <span v-else>
-            {{ message.stringContent || '[No content]' }}
-          </span>
-          <!-- Display checkmark for the logged-in user's message if available -->
-          <span v-if="message.senderId === userId && message.checkmark" style="margin-left: 5px; color: green;">
-            {{ message.checkmark }}
-          </span>
-          <button
-            @click="deleteMessage(message)"
-            style="background-color: red; color: white; border: none; margin-left: 10px; cursor: pointer;"
-          >
-            Delete
-          </button>
-        </li>
-      </ul>
+    <!-- Forward Message Modal -->
+    <div v-if="showForwardUI" class="modal">
+      <div class="modal-content">
+        <h3>Forward Message</h3>
+        <p>Select a conversation or user to forward the message:</p>
+        <div class="forward-section">
+          <h4>Existing Conversations</h4>
+          <ul>
+            <li v-for="conv in conversations" :key="'conv-' + conv.id">
+              <span>{{ conv.name }}</span>
+              <button @click="forwardMessageToConversation(conv.id)">Forward</button>
+            </li>
+          </ul>
+        </div>
+        <div class="forward-section">
+          <h4>Users without Conversation</h4>
+          <ul>
+            <li v-for="user in nonConversationalUsers" :key="'user-' + user.id">
+              <span>{{ user.name }}</span>
+              <button @click="forwardMessageToUser(user)">Forward</button>
+            </li>
+          </ul>
+        </div>
+        <button @click="cancelForward" class="cancel-button">Cancel</button>
+      </div>
     </div>
- 
-
-   </div>
- </div>
+  </div>
 </template>
 
 <script>
@@ -191,6 +224,7 @@ export default {
       selectedNewMemberIds: [],
       showChangeGroupName: false,
       newGroupName: "",
+      
       // Messages for the selected conversation
       messages: [],
 
@@ -200,6 +234,12 @@ export default {
       // Intervals for auto-refresh
       conversationIntervalId: null,
       messageIntervalId: null,
+
+      // Forwarding message UI
+      showForwardUI: false,
+      messageToForward: null,
+      // Store the source conversation id when opening the forward modal
+      sourceConversationIdForForward: null,
     };
   },
   computed: {
@@ -223,6 +263,19 @@ export default {
     reversedMessages() {
       return this.messages.slice().reverse();
     },
+    nonConversationalUsers() {
+      // Compute the list of users with whom there is no one-on-one conversation.
+      const oneOnOneUserIds = [];
+      this.conversations.forEach(conv => {
+        if (!conv.isGroup) {
+          const otherId = conv.participants.find(id => id !== this.userId);
+          if (otherId) {
+            oneOnOneUserIds.push(otherId);
+          }
+        }
+      });
+      return this.otherUsers.filter(user => !oneOnOneUserIds.includes(user.id));
+    }
   },
   methods: {
     // Log in the user and start conversation auto-refresh.
@@ -233,14 +286,12 @@ export default {
           throw new Error("Invalid API response");
         }
         this.securityKey = response.data.apiKey;
-        // Convert userId to a number for correct comparisons.
         this.userId = Number(response.data.userId);
         this.msg = "Logged in successfully";
 
         await this.fetchUsers();
         await this.fetchConversations();
 
-        // Auto-refresh conversations every 10 seconds.
         this.conversationIntervalId = setInterval(() => {
           this.fetchConversations();
         }, 10000);
@@ -277,7 +328,7 @@ export default {
       this.newMessage = "";
       this.msg = "Logged out successfully";
     },
-    // Change the logged-in user's name and update the current conversation if needed.
+    // Change the logged-in user's name.
     async changeName() {
       try {
         if (!this.securityKey || !this.userId || !this.newName) {
@@ -313,7 +364,7 @@ export default {
         this.msg = "Failed to change name: " + (error.response?.data?.error || error.message);
       }
     },
-    // Fetch conversations by first getting the conversation details (for the preview string) and then computing the name.
+    // Fetch conversations.
     async fetchConversations() {
       if (!this.securityKey) {
         this.msg = "Authorization key is missing. Please log in.";
@@ -329,7 +380,6 @@ export default {
           conversationIds = [];
         }
         const convs = [];
-        // For each conversation id, get the conversation details (which include preview, participants, is_group)
         for (const convId of conversationIds) {
           try {
             const detailsResponse = await this.$axios.get(`/conversations/${convId}`, {
@@ -338,7 +388,6 @@ export default {
             const details = detailsResponse.data;
             const numericParticipants = (details.participants || []).map(p => Number(p));
             let convName = "";
-            // If this is a group conversation, try to fetch its name from the dedicated endpoint.
             if (details.is_group) {
               try {
                 const nameResponse = await this.$axios.get(`/conversations/${convId}/name`, {
@@ -349,14 +398,11 @@ export default {
                 convName = "Group Conversation";
               }
             } else {
-              // For one-on-one conversations, compute the name using the other participant.
               const otherId = numericParticipants.find(id => id !== this.userId);
               const otherUser = this.otherUsers.find(user => user.id === otherId);
               convName = otherUser ? otherUser.name : "Unknown";
             }
-            // Use the preview string (latest message) from the conversation details.
             const preview = details.preview || "";
-            // Store photo_preview as received (ignored in the UI for now).
             const photoPreview = details.photo_preview || false;
             convs.push({
               id: convId,
@@ -376,7 +422,7 @@ export default {
         this.msg = "Failed to fetch conversations: " + e.message;
       }
     },
-    // Fetch users for conversation creation.
+    // Fetch users.
     async fetchUsers() {
       if (!this.securityKey) {
         this.msg = "Authorization key is missing. Please log in.";
@@ -411,7 +457,7 @@ export default {
         this.msg = "Failed to fetch user data: " + e.message;
       }
     },
-    // Create a new conversation with the selected users.
+    // Create a new conversation.
     async createNewConversation() {
       if (!this.selectedUserIds.length) {
         this.msg = "Please select at least one user.";
@@ -445,7 +491,7 @@ export default {
       this.selectedUserIds = [];
       this.userSearch = "";
     },
-    // Select a conversation, convert participant IDs to numbers, and start auto-refreshing messages.
+    // Select a conversation.
     async selectConversation(conversation) {
       try {
         const response = await this.$axios.get(`/conversations/${conversation.id}`, {
@@ -495,7 +541,6 @@ export default {
           this.messages = [];
         }
 
-        // Clear any previous message refresh interval and start a new one.
         if (this.messageIntervalId) {
           clearInterval(this.messageIntervalId);
         }
@@ -508,16 +553,15 @@ export default {
           (error.response?.data?.error || error.message);
       }
     },
-    // Fetch messages for a given conversation.
+    // Fetch messages for a conversation.
     async fetchMessages(conversationId, messageIds) {
       try {
         const requests = messageIds.map(messageId =>
           this.$axios.get(`/conversations/${conversationId}/messages/${messageId}`, {
             headers: { Authorization: `Bearer ${this.securityKey}` },
           })
-       );
+        );
         const responses = await Promise.all(requests);
-        // Attach the corresponding message id to each response object.
         this.messages = responses.map((response, index) => {
           return { id: messageIds[index], ...response.data };
         });
@@ -526,9 +570,7 @@ export default {
           (error.response?.data?.error || error.message);
       }
     },
-
-
-    // Refresh messages for the currently selected conversation.
+    // Refresh messages.
     async refreshMessages() {
       if (!this.selectedConversationDetails) return;
       try {
@@ -545,7 +587,7 @@ export default {
         console.error("Failed to refresh messages: ", error);
       }
     },
-    // Send a new message and then refresh the conversation.
+    // Send a new message.
     async sendMessage() {
       if (!this.newMessage.trim()) return;
       try {
@@ -560,7 +602,6 @@ export default {
           }
         );
         this.newMessage = "";
-        // Refresh the conversation (and messages)
         await this.selectConversation({
           id: this.selectedConversationDetails.id,
           name: this.selectedConversationDetails.name,
@@ -595,7 +636,7 @@ export default {
       this.newMembersSearch = "";
       this.selectedNewMemberIds = [];
     },
-    // Confirm and add new members to a group.
+    // Confirm adding members.
     async confirmAddMembers() {
       if (!this.selectedNewMemberIds.length) {
         this.msg = "Please select at least one user to add.";
@@ -626,7 +667,7 @@ export default {
         }
       }
     },
-    // Cancel the Add Members UI.
+    // Cancel Add Members UI.
     cancelAddMembers() {
       this.showAddMembers = false;
       this.newMembersSearch = "";
@@ -637,7 +678,7 @@ export default {
       this.showChangeGroupName = !this.showChangeGroupName;
       this.newGroupName = "";
     },
-    // Confirm changing the group name.
+    // Confirm changing group name.
     async confirmChangeGroupName() {
       if (!this.newGroupName) {
         this.msg = "New group name is required.";
@@ -666,16 +707,12 @@ export default {
         }
       }
     },
-    // Cancel the Change Group Name UI.
+    // Cancel Change Group Name UI.
     cancelChangeGroupName() {
       this.showChangeGroupName = false;
       this.newGroupName = "";
     },
-    
-
-        // Delete a message that was sent by the logged-in user.
-
-	// Delete a message that was sent by the logged-in user.
+    // Delete a message.
     async deleteMessage(message) {
       try {
         await this.$axios.delete(
@@ -684,8 +721,6 @@ export default {
             headers: { Authorization: `Bearer ${this.securityKey}` },
           }
         );
-    
-        // Remove the deleted message from the local messages array.
         this.messages = this.messages.filter(m => m.id !== message.id);
         this.msg = "Message deleted successfully.";
       } catch (error) {
@@ -694,13 +729,88 @@ export default {
           (error.response?.data?.error || error.message);
       }
     },
-
-
-   // Format a timestamp for display.
+    // Open the forward modal and store the source conversation id.
+    openForwardUI(message) {
+      this.messageToForward = message;
+      // Store the conversation id from which the message originates.
+      this.sourceConversationIdForForward = this.selectedConversationDetails.id;
+      this.showForwardUI = true;
+    },
+    // Cancel forwarding.
+    cancelForward() {
+      this.messageToForward = null;
+      this.sourceConversationIdForForward = null;
+      this.showForwardUI = false;
+    },
+    // Forward the message to an existing conversation.
+    async forwardMessageToConversation(targetConversationId) {
+      if (!this.messageToForward) return;
+      try {
+        await this.$axios.post(
+          `/conversations/${this.sourceConversationIdForForward}/messages/${this.messageToForward.id}`,
+          { targetConversationId },
+          {
+            headers: {
+                Authorization: `Bearer ${this.securityKey}`,
+		"Content-Type": "application/json"
+            }
+          }
+        );
+        this.msg = "Message forwarded successfully.";
+        this.cancelForward();
+      } catch (error) {
+        this.msg = "Failed to forward message: " + (error.response?.data?.error || error.message);
+      }
+    },
+    // Forward the message by first creating a new conversation with the selected user.
+    async forwardMessageToUser(user) {
+      if (!this.messageToForward) return;
+      try {
+        // Create a new conversation with the current user and the selected user.
+        const conversationUserIds = [this.userId, user.id];
+        await this.$axios.put(
+          "/new_conversation",
+          { userIds: conversationUserIds },
+          {
+            headers: {
+              Authorization: `Bearer ${this.securityKey}`,
+              "Content-Type": "application/json"
+            }
+          }
+        );
+        await this.fetchConversations();
+        // Find the newly created one-on-one conversation.
+        const newConversation = this.conversations.find(conv => {
+          return (
+            !conv.isGroup &&
+            conv.participants.includes(user.id) &&
+            conv.participants.includes(this.userId)
+          );
+        });
+        if (!newConversation) {
+          throw new Error("New conversation not found.");
+        }
+        await this.$axios.post(
+          `/conversations/${this.sourceConversationIdForForward}/messages/${this.messageToForward.id}`,
+          { targetConversationId: newConversation.id },
+          {
+            headers: {
+              Authorization: `Bearer ${this.securityKey}`,
+              "Content-Type": "application/json"
+            }
+          }
+        );
+        this.msg = "Message forwarded successfully to new conversation.";
+        this.cancelForward();
+      } catch (error) {
+        this.msg = "Failed to forward message: " + (error.response?.data?.error || error.message);
+      }
+    },
+    // Format a timestamp.
     formatTimestamp(timestamp) {
       return new Date(timestamp).toLocaleString();
     },
-    // Get the sender name from a sender ID.
+    // Get the sender name.
     getSenderName(senderId) {
       if (senderId === this.userId) {
         return this.username;
@@ -815,6 +925,57 @@ export default {
 }
 .message-sending button {
   padding: 8px 16px;
+}
+
+/* Forward Modal Styles */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.modal-content {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 4px;
+  width: 90%;
+  max-width: 400px;
+}
+.forward-section {
+  margin-bottom: 15px;
+}
+.forward-section ul {
+  list-style: none;
+  padding: 0;
+}
+.forward-section li {
+  margin-bottom: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.cancel-button {
+  background-color: gray;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+/* Forwarded message tag */
+.forwarded-tag {
+  font-size: 0.8em;
+  padding: 2px 4px;
+  border: 1px solid orange;
+  border-radius: 3px;
+  color: orange;
+  margin-left: 5px;
 }
 </style>
 

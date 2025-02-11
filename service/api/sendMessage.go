@@ -56,7 +56,6 @@ func (rt *_router) sendMessage(w http.ResponseWriter, r *http.Request, ps httpro
 		return
 	}
 
-	//Extract the message
 	var requestBody struct {
 		Message string `json:"message"`
 	}
@@ -74,7 +73,6 @@ func (rt *_router) sendMessage(w http.ResponseWriter, r *http.Request, ps httpro
 		return
 	}
 
-	//DB call
 
 	err = rt.db.SendMessage(user_id, conv_id, requestBody.Message, false, globaltime.Now())
 

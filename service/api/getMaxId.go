@@ -18,10 +18,9 @@ func (rt *_router) getMaxId(w http.ResponseWriter, r *http.Request, ps httproute
 		return
 	}
 
-	// Extract the token by removing 'Bearer ' prefix
 	token := authHeader[len(bearerPrefix):]
 
-	if token == "" { //The user should be able to get the name of any user, he just needs to have a valid token
+	if token == "" { 
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Empty token"})
 		return
