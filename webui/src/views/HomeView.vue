@@ -111,25 +111,40 @@
         </div>
       </div>
 
-      <!-- Messages Section -->
-<!-- Messages Section -->
-    <div class="messages">
+     <!-- Message Sending Section -->
+    <div class="message-sending" v-if="securityKey && selectedConversationDetails">
+      <input
+        v-model="newMessage"
+        placeholder="Type your message here"
+        @keyup.enter="sendMessage"
+      />
+      <button @click="sendMessage">Send</button>
+    </div>
+
+    <!-- Messages Section -->
+    <div class="messages" v-if="securityKey && selectedConversationDetails">
       <h3>Messages</h3>
-      <div v-if="messages.length === 0">No messages in conversation</div>
+      <div v-if="reversedMessages.length === 0">No messages in conversation</div>
       <ul v-else>
-        <li v-for="(message, index) in messages" :key="index">
-      <!-- Display sender name differently based on whether it's the logged-in user -->
-          <span v-if="message.senderId === userId">
-            <strong style="color: blue;">{{ getSenderName(message.senderId) }}</strong>
-          </span>
-          <span v-else>
+        <li v-for="(message, index) in reversedMessages" :key="index">
+          <!-- Display sender name only for messages from others -->
+          <span v-if="message.senderId !== userId">
             <strong>{{ getSenderName(message.senderId) }}</strong>
+          </span>
+          <!-- For the logged-in user's messages, no sender name is shown -->
+          <span v-else>
           </span>
           ({{ message.timestamp ? formatTimestamp(message.timestamp) : 'No timestamp' }}):
           <br />
-          <span>{{ message.stringContent || '[No content]' }}</span>
-          <span v-if="message.senderId === userId && message.checkmark" 
-                style="margin-left: 5px; color: green;">
+          <!-- Display message content in blue for the logged-in user's messages, normal otherwise -->
+          <span v-if="message.senderId === userId" style="color: blue;">
+            {{ message.stringContent || '[No content]' }}
+          </span>
+          <span v-else>
+            {{ message.stringContent || '[No content]' }}
+          </span>
+          <!-- Display checkmark for the logged-in user's message if available -->
+          <span v-if="message.senderId === userId && message.checkmark" style="margin-left: 5px; color: green;">
             {{ message.checkmark }}
           </span>
           <button
@@ -141,18 +156,10 @@
         </li>
       </ul>
     </div>
+ 
 
-      <!-- Message Sending Section -->
-      <div class="message-sending">
-        <input
-          v-model="newMessage"
-          placeholder="Type your message here"
-          @keyup.enter="sendMessage"
-        />
-        <button @click="sendMessage">Send</button>
-      </div>
-    </div>
-  </div>
+   </div>
+ </div>
 </template>
 
 <script>
@@ -212,6 +219,9 @@ export default {
         !currentMembers.includes(user.id) &&
         user.name.toLowerCase().includes(this.newMembersSearch.toLowerCase())
       );
+    },
+    reversedMessages() {
+      return this.messages.slice().reverse();
     },
   },
   methods: {
