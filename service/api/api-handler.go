@@ -20,10 +20,10 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.GET("/conversations/:convid", rt.wrap(rt.getConversation))
 
 	rt.router.POST("/conversations/:convid", rt.wrap(rt.sendMessage))
-	rt.router.DELETE("/conversations/:convid/messages/:messageId", rt.wrap(rt.deleteMessage))
-	rt.router.POST("/conversations/:convid/messages/:messageId", rt.wrap(rt.forwardMessage))
-	rt.router.DELETE("/conversations/:convid/messages/:messageId/comments", rt.wrap(rt.uncommentMessage))
-	rt.router.POST("/conversations/:convid/messages/:messageId/comments", rt.wrap(rt.commentMessage))
+	rt.router.DELETE("/conversations/:convid/messages/:messageId", rt.wrap(rt.deleteMessage)) 
+	rt.router.POST("/conversations/:convid/messages/:messageId", rt.wrap(rt.forwardMessage)) 
+	rt.router.DELETE("/conversations/:convid/messages/:messageId/comments", rt.wrap(rt.uncommentMessage)) 
+	rt.router.POST("/conversations/:convid/messages/:messageId/comments", rt.wrap(rt.commentMessage)) 
 	rt.router.GET("/conversations/:convid/messages/:messageId", rt.wrap(rt.getMessage))
 	rt.router.GET("/conversations/:convid/messages/:messageId/photo", rt.wrap(rt.getMessagePhoto)) // *
 

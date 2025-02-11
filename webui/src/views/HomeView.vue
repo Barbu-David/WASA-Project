@@ -27,10 +27,10 @@
               @click="selectConversation(conversation)"
               :class="{ selected: selectedConversationDetails && selectedConversationDetails.id === conversation.id }"
             >
+              <!-- Display the computed conversation name and the preview message -->
               <div>{{ conversation.name }}</div>
               <div class="preview">
-                <span v-if="conversation.photoPreview">🖼️</span>
-                <span v-else>{{ conversation.preview }}</span>
+                <span>{{ conversation.preview }}</span>
               </div>
             </li>
           </ul>
@@ -118,8 +118,17 @@
         <ul v-else>
           <li v-for="(message, index) in messages" :key="index">
             <strong>{{ getSenderName(message.senderId) }}</strong>
-            ({{ message.timestamp ? formatTimestamp(message.timestamp) : 'No timestamp' }}):<br />
+            ({{ message.timestamp ? formatTimestamp(message.timestamp) : 'No timestamp' }}):
+            <br />
             <span>{{ message.stringContent || '[No content]' }}</span>
+            <!-- Only show the delete button for messages sent by the logged-in user -->
+            <button
+              v-if="message.senderId === userId"
+              @click="deleteMessage(message)"
+              style="background-color: red; color: white; border: none; margin-left: 10px; cursor: pointer;"
+            >
+              Delete
+            </button>
           </li>
         </ul>
       </div>
@@ -171,10 +180,13 @@ export default {
 
       // New message text for sending a message
       newMessage: "",
+
+      // Intervals for auto-refresh
+      conversationIntervalId: null,
+      messageIntervalId: null,
     };
   },
   computed: {
-    // Filters the full list of other users by the search term.
     filteredUsers() {
       if (!this.userSearch) return this.otherUsers;
       return this.otherUsers.filter(user =>
@@ -183,7 +195,6 @@ export default {
     },
     filteredUsersForGroup() {
       if (!this.selectedConversationDetails) return [];
-      // Only show users that are not already participants in the conversation
       const currentMembers = this.selectedConversationDetails.participants || [];
       if (!this.newMembersSearch) {
         return this.otherUsers.filter(user => !currentMembers.includes(user.id));
@@ -195,7 +206,7 @@ export default {
     },
   },
   methods: {
-    // Log in the user. We now fetch users first so that conversation names for one-on-one chats can be computed.
+    // Log in the user and start conversation auto-refresh.
     async loginUser() {
       try {
         const response = await this.$axios.post("/session", { name: this.username });
@@ -203,18 +214,31 @@ export default {
           throw new Error("Invalid API response");
         }
         this.securityKey = response.data.apiKey;
-        this.userId = response.data.userId;
+        // Convert userId to a number for correct comparisons.
+        this.userId = Number(response.data.userId);
         this.msg = "Logged in successfully";
 
-        // Fetch users first, then conversations
         await this.fetchUsers();
         await this.fetchConversations();
+
+        // Auto-refresh conversations every 10 seconds.
+        this.conversationIntervalId = setInterval(() => {
+          this.fetchConversations();
+        }, 10000);
       } catch (e) {
         this.msg = "Login failed: " + e.message;
       }
     },
-    // Logout: clear all data.
+    // Clear all data and intervals.
     logoutUser() {
+      if (this.conversationIntervalId) {
+        clearInterval(this.conversationIntervalId);
+        this.conversationIntervalId = null;
+      }
+      if (this.messageIntervalId) {
+        clearInterval(this.messageIntervalId);
+        this.messageIntervalId = null;
+      }
       this.username = "";
       this.newName = "";
       this.securityKey = null;
@@ -234,7 +258,7 @@ export default {
       this.newMessage = "";
       this.msg = "Logged out successfully";
     },
-    // Change the user’s name.
+    // Change the logged-in user's name and update the current conversation if needed.
     async changeName() {
       try {
         if (!this.securityKey || !this.userId || !this.newName) {
@@ -253,7 +277,16 @@ export default {
         );
         if (response.status === 204) {
           this.msg = "Name changed successfully!";
+          this.username = this.newName;
           this.newName = "";
+          if (this.selectedConversationDetails) {
+            this.selectedConversationDetails.memberNames = this.selectedConversationDetails.memberNames.map(member => {
+              if (member.id === this.userId) {
+                return { ...member, name: this.username };
+              }
+              return member;
+            });
+          }
         } else {
           this.msg = `Unexpected response: ${response.status}`;
         }
@@ -261,9 +294,9 @@ export default {
         this.msg = "Failed to change name: " + (error.response?.data?.error || error.message);
       }
     },
-    // Fetch the conversations list for the logged-in user.
+    // Fetch conversations by first getting the conversation details (for the preview string) and then computing the name.
     async fetchConversations() {
-      if (!this.securityKey) { 
+      if (!this.securityKey) {
         this.msg = "Authorization key is missing. Please log in.";
         return;
       }
@@ -277,27 +310,54 @@ export default {
           conversationIds = [];
         }
         const convs = [];
-         for (const convId of conversationIds) {
+        // For each conversation id, get the conversation details (which include preview, participants, is_group)
+        for (const convId of conversationIds) {
           try {
-            const convNameResponse = await this.$axios.get(`/conversations/${convId}/name`, {
+            const detailsResponse = await this.$axios.get(`/conversations/${convId}`, {
               headers: { Authorization: `Bearer ${this.securityKey}` },
             });
-            if (!convNameResponse.data || !convNameResponse.data.name) {
-              throw new Error(`Invalid response for conversation ${convId}`);
+            const details = detailsResponse.data;
+            const numericParticipants = (details.participants || []).map(p => Number(p));
+            let convName = "";
+            // If this is a group conversation, try to fetch its name from the dedicated endpoint.
+            if (details.is_group) {
+              try {
+                const nameResponse = await this.$axios.get(`/conversations/${convId}/name`, {
+                  headers: { Authorization: `Bearer ${this.securityKey}` },
+                });
+                convName = nameResponse.data.name || "Group Conversation";
+              } catch (err) {
+                convName = "Group Conversation";
+              }
+            } else {
+              // For one-on-one conversations, compute the name using the other participant.
+              const otherId = numericParticipants.find(id => id !== this.userId);
+              const otherUser = this.otherUsers.find(user => user.id === otherId);
+              convName = otherUser ? otherUser.name : "Unknown";
             }
-            convs.push({ id: convId, name: convNameResponse.data.name });
+            // Use the preview string (latest message) from the conversation details.
+            const preview = details.preview || "";
+            // Store photo_preview as received (ignored in the UI for now).
+            const photoPreview = details.photo_preview || false;
+            convs.push({
+              id: convId,
+              name: convName,
+              preview: preview,
+              photoPreview: photoPreview,
+              isGroup: details.is_group,
+              participants: numericParticipants,
+            });
           } catch (err) {
-            console.error(`Failed to fetch conversation ${convId}:`, err);
-            convs.push({ id: convId, name: "Unknown" });
-          }
-        }
-        this.conversations = convs;  
-	} catch (err) {
             console.error(`Failed to fetch conversation ${convId}:`, err);
             convs.push({ id: convId, name: "Unknown", preview: "", photoPreview: false, isGroup: true, participants: [] });
           }
+        }
+        this.conversations = convs;
+      } catch (e) {
+        this.msg = "Failed to fetch conversations: " + e.message;
+      }
     },
-    // Fetch the list of all users (excluding the logged-in user) for conversation creation.
+    // Fetch users for conversation creation.
     async fetchUsers() {
       if (!this.securityKey) {
         this.msg = "Authorization key is missing. Please log in.";
@@ -332,7 +392,7 @@ export default {
         this.msg = "Failed to fetch user data: " + e.message;
       }
     },
-    // Create a new conversation using the selected user IDs (plus the logged-in user’s id).
+    // Create a new conversation with the selected users.
     async createNewConversation() {
       if (!this.selectedUserIds.length) {
         this.msg = "Please select at least one user.";
@@ -366,14 +426,15 @@ export default {
       this.selectedUserIds = [];
       this.userSearch = "";
     },
-    // When a conversation is clicked, fetch its details and map participant IDs to names.
+    // Select a conversation, convert participant IDs to numbers, and start auto-refreshing messages.
     async selectConversation(conversation) {
       try {
         const response = await this.$axios.get(`/conversations/${conversation.id}`, {
           headers: { Authorization: `Bearer ${this.securityKey}` },
         });
-        const participants = response.data.participants || [];
-        const memberNames = participants.map((participantId) => {
+        const details = response.data;
+        const numericParticipants = (details.participants || []).map(p => Number(p));
+        const memberNames = numericParticipants.map((participantId) => {
           let user = this.otherUsers.find(u => u.id === participantId);
           if (!user && participantId === this.userId) {
             user = { id: participantId, name: this.username };
@@ -383,52 +444,89 @@ export default {
           }
           return user;
         });
-        const isGroup = response.data.is_group !== undefined
-          ? response.data.is_group
-          : (participants.length > 2);
-        let conversationName = conversation.name; // default from conversation list
-        if (!isGroup) {
-          const otherId = participants.find(id => id !== this.userId);
-          const otherMember = memberNames.find(member => member.id === otherId) ||
-                              this.otherUsers.find(user => user.id === otherId);
-          conversationName = otherMember ? otherMember.name : "Unknown";
+        let convName = "";
+        if (details.is_group) {
+          try {
+            const nameResponse = await this.$axios.get(`/conversations/${conversation.id}/name`, {
+              headers: { Authorization: `Bearer ${this.securityKey}` },
+            });
+            convName = nameResponse.data.name || "Group Conversation";
+          } catch (err) {
+            convName = "Group Conversation";
+          }
+        } else {
+          const otherId = numericParticipants.find(id => id !== this.userId);
+          const otherUser = this.otherUsers.find(user => user.id === otherId);
+          convName = otherUser ? otherUser.name : "Unknown";
         }
         this.selectedConversationDetails = {
           id: conversation.id,
-          name: conversationName,
-          participants,
+          name: convName,
+          participants: numericParticipants,
           memberNames,
-          isGroup,
-          preview: response.data.preview,
-          photoPreview: response.data.photo_preview,
+          isGroup: details.is_group,
+          preview: details.preview,
+          photoPreview: details.photo_preview,
         };
 
-        const messageIds = response.data.messages || [];
+        const messageIds = details.messages || [];
         if (messageIds.length) {
           await this.fetchMessages(conversation.id, messageIds);
         } else {
           this.messages = [];
         }
+
+        // Clear any previous message refresh interval and start a new one.
+        if (this.messageIntervalId) {
+          clearInterval(this.messageIntervalId);
+        }
+        this.messageIntervalId = setInterval(() => {
+          this.refreshMessages();
+        }, 5000);
       } catch (error) {
         this.msg =
           "Failed to fetch conversation details: " +
           (error.response?.data?.error || error.message);
       }
     },
+    // Fetch messages for a given conversation.
     async fetchMessages(conversationId, messageIds) {
       try {
         const requests = messageIds.map(messageId =>
           this.$axios.get(`/conversations/${conversationId}/messages/${messageId}`, {
             headers: { Authorization: `Bearer ${this.securityKey}` },
           })
-        );
+       );
         const responses = await Promise.all(requests);
-        this.messages = responses.map(response => response.data);
+        // Attach the corresponding message id to each response object.
+        this.messages = responses.map((response, index) => {
+          return { id: messageIds[index], ...response.data };
+        });
       } catch (error) {
-        this.msg = "Failed to fetch messages: " + (error.response?.data?.error || error.message);
+        this.msg = "Failed to fetch messages: " +
+          (error.response?.data?.error || error.message);
       }
     },
-    // Send a message to the current conversation.
+
+
+    // Refresh messages for the currently selected conversation.
+    async refreshMessages() {
+      if (!this.selectedConversationDetails) return;
+      try {
+        const response = await this.$axios.get(`/conversations/${this.selectedConversationDetails.id}`, {
+          headers: { Authorization: `Bearer ${this.securityKey}` },
+        });
+        const messageIds = response.data.messages || [];
+        if (messageIds.length) {
+          await this.fetchMessages(this.selectedConversationDetails.id, messageIds);
+        } else {
+          this.messages = [];
+        }
+      } catch (error) {
+        console.error("Failed to refresh messages: ", error);
+      }
+    },
+    // Send a new message and then refresh the conversation.
     async sendMessage() {
       if (!this.newMessage.trim()) return;
       try {
@@ -443,7 +541,7 @@ export default {
           }
         );
         this.newMessage = "";
-        // Refresh the conversation details (and messages)
+        // Refresh the conversation (and messages)
         await this.selectConversation({
           id: this.selectedConversationDetails.id,
           name: this.selectedConversationDetails.name,
@@ -454,7 +552,7 @@ export default {
           (error.response?.data?.error || error.message);
       }
     },
-    // Option 1: Leave Group
+    // Leave the group conversation.
     async leaveGroup() {
       try {
         await this.$axios.delete(`/conversations/${this.selectedConversationDetails.id}/members`, {
@@ -472,13 +570,13 @@ export default {
         }
       }
     },
-    // Option 2: Toggle Add Members UI
+    // Toggle the Add Members UI.
     toggleAddMembers() {
       this.showAddMembers = !this.showAddMembers;
       this.newMembersSearch = "";
       this.selectedNewMemberIds = [];
     },
-    // Option 2: Confirm Adding New Members
+    // Confirm and add new members to a group.
     async confirmAddMembers() {
       if (!this.selectedNewMemberIds.length) {
         this.msg = "Please select at least one user to add.";
@@ -509,18 +607,18 @@ export default {
         }
       }
     },
-    // Option 2: Cancel Add Members UI
+    // Cancel the Add Members UI.
     cancelAddMembers() {
       this.showAddMembers = false;
       this.newMembersSearch = "";
       this.selectedNewMemberIds = [];
     },
-    // Option 3: Toggle Change Group Name UI
+    // Toggle the Change Group Name UI.
     toggleChangeGroupName() {
       this.showChangeGroupName = !this.showChangeGroupName;
       this.newGroupName = "";
     },
-    // Option 3: Confirm Changing Group Name
+    // Confirm changing the group name.
     async confirmChangeGroupName() {
       if (!this.newGroupName) {
         this.msg = "New group name is required.";
@@ -549,16 +647,41 @@ export default {
         }
       }
     },
-    // Option 3: Cancel Change Group Name UI
+    // Cancel the Change Group Name UI.
     cancelChangeGroupName() {
       this.showChangeGroupName = false;
       this.newGroupName = "";
     },
-    // Helper method to format the timestamp
+    
+
+        // Delete a message that was sent by the logged-in user.
+
+	// Delete a message that was sent by the logged-in user.
+    async deleteMessage(message) {
+      try {
+        await this.$axios.delete(
+          `/conversations/${this.selectedConversationDetails.id}/messages/${message.id}`,
+          {
+            headers: { Authorization: `Bearer ${this.securityKey}` },
+          }
+        );
+    
+        // Remove the deleted message from the local messages array.
+        this.messages = this.messages.filter(m => m.id !== message.id);
+        this.msg = "Message deleted successfully.";
+      } catch (error) {
+        this.msg =
+          "Failed to delete message: " +
+          (error.response?.data?.error || error.message);
+      }
+    },
+
+
+   // Format a timestamp for display.
     formatTimestamp(timestamp) {
       return new Date(timestamp).toLocaleString();
     },
-    // Helper method to convert sender ID to sender name
+    // Get the sender name from a sender ID.
     getSenderName(senderId) {
       if (senderId === this.userId) {
         return this.username;
@@ -571,11 +694,19 @@ export default {
       return foundUser ? foundUser.name : "Unknown";
     },
   },
+  beforeDestroy() {
+    if (this.conversationIntervalId) {
+      clearInterval(this.conversationIntervalId);
+    }
+    if (this.messageIntervalId) {
+      clearInterval(this.messageIntervalId);
+    }
+  },
 };
 </script>
 
 <style>
-/* Left Panel (Sidebar) */
+/* Sidebar Styles */
 .sidebar {
   width: 300px;
   background-color: #f4f4f4;
@@ -613,14 +744,12 @@ export default {
   color: #555;
 }
 
-/* Right Panel (Conversation Details) */
+/* Conversation Details Styles */
 .conversation-details {
   flex: 1;
   padding: 20px;
   margin-left: 60px;
 }
-
-/* Styles for Group Options Section */
 .group-options {
   margin-top: 20px;
   padding-top: 10px;
@@ -641,7 +770,7 @@ export default {
   border: none;
 }
 
-/* Styles for Messages Section */
+/* Messages Styles */
 .messages {
   margin-top: 20px;
 }
@@ -654,7 +783,7 @@ export default {
   border-bottom: 1px solid #ccc;
 }
 
-/* Styles for Message Sending Section */
+/* Message Sending Styles */
 .message-sending {
   margin-top: 20px;
   display: flex;

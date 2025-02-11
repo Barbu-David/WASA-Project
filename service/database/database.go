@@ -112,7 +112,7 @@ func New(db *sql.DB) (AppDatabase, error) {
 					 comment TEXT,
 					 seen BOOL,
 					 received BOOL,
-					 PRIMARY KEY (m_id, user_id),
+					 id INTEGER NOT NULL PRIMARY KEY,
 					 FOREIGN KEY (m_id) REFERENCES Messages(id),
 					 FOREIGN KEY (user_id) REFERENCES Users(id)
 					 );`
