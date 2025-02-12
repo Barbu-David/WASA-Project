@@ -264,6 +264,7 @@ export default {
       // Intervals for auto-refresh
       conversationIntervalId: null,
       messageIntervalId: null,
+      userRefreshIntervalId: null,
 
       // Forwarding message UI
       showForwardUI: false,
@@ -328,6 +329,10 @@ export default {
         this.conversationIntervalId = setInterval(() => {
           this.fetchConversations();
         }, 10000);
+
+     this.userRefreshIntervalId = setInterval(() => {
+      this.fetchUsers();
+    }, 10000);
       } catch (e) {
         this.msg = "Login failed: " + e.message;
       }
@@ -386,6 +391,10 @@ export default {
       if (this.messageIntervalId) {
         clearInterval(this.messageIntervalId);
         this.messageIntervalId = null;
+      }
+      if (this.userRefreshIntervalId) {
+        clearInterval(this.userRefreshIntervalId);
+        this.userRefreshIntervalId = null;
       }
       this.username = "";
       this.newName = "";
