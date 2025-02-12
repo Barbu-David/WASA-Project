@@ -8,6 +8,10 @@
       <button v-else @click="logoutUser">Logout</button>
       <p v-if="msg">{{ msg }}</p>
 
+      <div v-if="userPhoto" class="user-photo">
+        <img :src="userPhoto" alt="Your Profile Photo" />
+      </div>
+
       <!-- Change Name Section -->
       <div v-if="securityKey" class="change-name">
         <input v-model="newName" placeholder="Change your name" />
@@ -216,12 +220,12 @@ export default {
       msg: "",
       securityKey: null,
       userId: null,
+      userPhoto: null,
 
       // Data lists
       conversations: [],
       otherUsers: [],
 
-      // New conversation creation UI
       showNewConversation: false,
       userSearch: "",
       selectedUserIds: [],
@@ -302,6 +306,7 @@ export default {
         this.userId = Number(response.data.userId);
         this.msg = "Logged in successfully";
 
+	await this.fetchMyPhoto()
         await this.fetchUsers();
         await this.fetchConversations();
 
@@ -312,6 +317,20 @@ export default {
         this.msg = "Login failed: " + e.message;
       }
     },
+
+    async fetchMyPhoto() {
+      try {
+        const response = await this.$axios.get(`/users/${this.userId}/photo`, {
+          headers: { Authorization: `Bearer ${this.securityKey}` },
+          responseType: 'blob' // Important: get the binary data
+        });
+        // Convert the Blob to an object URL that can be used as the image source
+        this.userPhoto = URL.createObjectURL(response.data);
+      } catch (error) {
+        console.error("Failed to fetch my photo:", error);
+      }
+    },
+
     // Clear all data and intervals.
     logoutUser() {
       if (this.conversationIntervalId) {
@@ -341,6 +360,7 @@ export default {
       this.newMessage = "";
       this.replyTo = null;
       this.msg = "Logged out successfully";
+      this.userPhoto = null;
     },
     // Change the logged-in user's name.
     async changeName() {
@@ -436,6 +456,8 @@ export default {
         this.msg = "Failed to fetch conversations: " + e.message;
       }
     },
+    
+
     // Fetch users.
     async fetchUsers() {
       if (!this.securityKey) {
@@ -460,17 +482,31 @@ export default {
             if (!userResponse.data || !userResponse.data.name) {
               throw new Error(`Invalid response for user ${id}`);
             }
-            users.push({ id, name: userResponse.data.name });
-          } catch (err) {
-            console.error(`Failed to fetch user ${id}:`, err);
-            users.push({ id, name: "Unknown" });
+            const userObj = { id, name: userResponse.data.name, photo: null };
+
+            // Fetch the user's photo
+            try {
+              const photoResponse = await this.$axios.get(`/users/${id}/photo`, {
+                headers: { Authorization: `Bearer ${this.securityKey}` },
+                responseType: 'blob'
+              });
+              userObj.photo = URL.createObjectURL(photoResponse.data);
+            } catch (photoErr) {
+              console.error(`Failed to fetch photo for user ${id}:`, photoErr);
+            }
+            users.push(userObj);
+          } catch (e) {
+            console.error(`Failed to fetch data for user ${id}:`, e);
+            users.push({ id, name: "Unknown", photo: null });
           }
-        }
-        this.otherUsers = users;
+    }
+    this.otherUsers = users;
       } catch (e) {
         this.msg = "Failed to fetch user data: " + e.message;
       }
     },
+
+
     // Create a new conversation.
     async createNewConversation() {
       if (!this.selectedUserIds.length) {
@@ -996,6 +1032,14 @@ export default {
   border: none;
   padding: 5px 10px;
   cursor: pointer;
+}
+
+.user-photo img {
+  display: block;
+  width: 100px; 
+  height: auto;
+  margin-bottom: 10px;
+  border-radius: 50%;
 }
 
 /* Forwarded message tag */

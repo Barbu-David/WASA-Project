@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"image/gif"
 	"time"
 )
 
@@ -16,6 +17,9 @@ type AppDatabase interface {
 
 	GetUserName(userID int) (string, error)
 	SetUserName(userID int, username string) error
+
+	GetUserPhoto(userID int) (*gif.GIF, error)
+	SetUserPhoto(userID int, photo *gif.GIF) error
 
 	GetUserKey(userID int) (string, error)
 	GetUserID(username string) (int, error)
@@ -31,6 +35,10 @@ type AppDatabase interface {
 
 	GetConversationName(conv_id int) (string, error)
 	SetConversationName(conv_id int, name string) error
+
+	GetConversationPhoto(conv_id int) (*gif.GIF, error)
+	SetConversationPhoto(conv_id int, photo *gif.GIF) error
+
 	IsGroupConversation(conv_id int) (bool, error)
 
 	GetUserConversations(userID int) ([]int, error)
@@ -51,6 +59,8 @@ type AppDatabase interface {
 
 	IsSeenByAll(m_id int) (bool, error)
 	IsDeliveredToAll(m_id int) (bool, error)
+
+	// GetMessagePhoto(m_id int) (gif.GIF, error)
 }
 
 type appdbimpl struct {
@@ -100,7 +110,8 @@ func New(db *sql.DB) (AppDatabase, error) {
 				   gif_photo BLOB,
 				   sender_id INTEGER NOT NULL,
 				   timestamp DATETIME NOT NULL,
-				   forwarded BOOL, 
+				   forwarded BOOL,
+				   is_photo BOOL, 
 				   FOREIGN KEY (conv_id) REFERENCES Conversations(id),
 				   FOREIGN KEY (sender_id) REFERENCES Users(id)
 				   );`
