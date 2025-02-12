@@ -8,10 +8,18 @@
       <button v-else @click="logoutUser">Logout</button>
       <p v-if="msg">{{ msg }}</p>
 
-      <div v-if="userPhoto" class="user-photo">
-        <img :src="userPhoto" alt="Your Profile Photo" />
-      </div>
-
+    <div v-if="userPhoto" class="user-photo">
+      <img :src="userPhoto" alt="Your Profile Photo" />
+      <button @click="openFileDialog">Change Photo</button>
+   </div>
+   <!-- Hidden file input to trigger the file selector -->
+   <input
+      type="file"
+      ref="photoInput"
+      accept="image/gif"
+      style="display: none"
+      @change="handlePhotoChange"
+    />
       <!-- Change Name Section -->
       <div v-if="securityKey" class="change-name">
         <input v-model="newName" placeholder="Change your name" />
@@ -317,6 +325,37 @@ export default {
         this.msg = "Login failed: " + e.message;
       }
     },
+
+  openFileDialog() {
+    this.$refs.photoInput.click();
+  },
+
+  async handlePhotoChange(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (file.type !== "image/gif") {
+      this.msg = "Please select a valid GIF image.";
+      return;
+    }
+
+    try {
+      await this.$axios.put(`/users/${this.userId}/photo`, file, {
+        headers: {
+          Authorization: `Bearer ${this.securityKey}`,
+          "Content-Type": "image/gif",
+        },
+      });
+      this.msg = "Photo updated successfully!";
+      // Refresh the displayed photo by fetching it again.
+      await this.fetchMyPhoto();
+    } catch (error) {
+      console.error("Failed to update photo:", error);
+      this.msg =
+        "Failed to update photo: " +
+        (error.response?.data?.error || error.message);
+    }
+  },
 
     async fetchMyPhoto() {
       try {
@@ -1036,7 +1075,7 @@ export default {
 
 .user-photo img {
   display: block;
-  width: 100px; 
+  width: 50px; 
   height: auto;
   margin-bottom: 10px;
   border-radius: 50%;

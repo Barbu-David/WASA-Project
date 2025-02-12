@@ -11,8 +11,8 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.GET("/users", rt.wrap(rt.getMaxId))
 	rt.router.PUT("/users/:id/name", rt.wrap(rt.setMyUserName))
 	rt.router.GET("/users/:id/name", rt.wrap(rt.getMyUserName))
-	rt.router.PUT("/users/:id/photo", rt.wrap(rt.setMyPhoto)) // *
-	rt.router.GET("/users/:id/photo", rt.wrap(rt.getMyPhoto)) // *
+	rt.router.PUT("/users/:id/photo", rt.wrap(rt.setMyPhoto)) 
+	rt.router.GET("/users/:id/photo", rt.wrap(rt.getMyPhoto)) 
 
 	rt.router.PUT("/new_conversation", rt.wrap(rt.startConversation))
 
