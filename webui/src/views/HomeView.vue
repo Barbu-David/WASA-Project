@@ -113,6 +113,11 @@
 
       <!-- Message Sending Section -->
       <div class="message-sending" v-if="securityKey && selectedConversationDetails">
+        <!-- Reply Banner: shows when a reply is in progress -->
+        <div v-if="replyTo" class="reply-banner">
+          Replying to {{ getSenderName(replyTo.senderId) }}: "{{ replyTo.stringContent }}"
+          <button @click="cancelReply" style="margin-left: 5px;">Cancel Reply</button>
+        </div>
         <input
           v-model="newMessage"
           placeholder="Type your message here"
@@ -148,7 +153,7 @@
             </span>
             <!-- Display forwarded tag if the message has been forwarded -->
             <span v-if="message.forwarded" class="forwarded-tag">Forwarded</span>
-            <!-- Action buttons: Delete and Forward -->
+            <!-- Action buttons: Delete, Forward, and Reply -->
             <button
               @click="deleteMessage(message)"
               style="background-color: red; color: white; border: none; margin-left: 10px; cursor: pointer;"
@@ -160,6 +165,12 @@
               style="background-color: green; color: white; border: none; margin-left: 5px; cursor: pointer;"
             >
               Forward
+            </button>
+            <button
+              @click="initiateReply(message)"
+              style="background-color: orange; color: white; border: none; margin-left: 5px; cursor: pointer;"
+            >
+              Reply
             </button>
           </li>
         </ul>
@@ -240,6 +251,8 @@ export default {
       messageToForward: null,
       // Store the source conversation id when opening the forward modal
       sourceConversationIdForForward: null,
+
+      replyTo: null,
     };
   },
   computed: {
@@ -326,6 +339,7 @@ export default {
       this.newGroupName = "";
       this.messages = [];
       this.newMessage = "";
+      this.replyTo = null;
       this.msg = "Logged out successfully";
     },
     // Change the logged-in user's name.
@@ -590,10 +604,15 @@ export default {
     // Send a new message.
     async sendMessage() {
       if (!this.newMessage.trim()) return;
+      // If replying to a message, prepend the reply info.
+      let messageContent = this.newMessage.trim();
+      if (this.replyTo) {
+        messageContent = `Replying to ${this.getSenderName(this.replyTo.senderId)} message: ${this.replyTo.stringContent} : ${messageContent}`;
+      }
       try {
         await this.$axios.post(
           `/conversations/${this.selectedConversationDetails.id}`,
-          { message: this.newMessage },
+          { message: messageContent },
           {
             headers: {
               Authorization: `Bearer ${this.securityKey}`,
@@ -602,6 +621,7 @@ export default {
           }
         );
         this.newMessage = "";
+        this.replyTo = null; // Clear the reply context after sending.
         await this.selectConversation({
           id: this.selectedConversationDetails.id,
           name: this.selectedConversationDetails.name,
@@ -729,6 +749,7 @@ export default {
           (error.response?.data?.error || error.message);
       }
     },
+    // --------------- Forward Message Methods ---------------
     // Open the forward modal and store the source conversation id.
     openForwardUI(message) {
       this.messageToForward = message;
@@ -751,8 +772,8 @@ export default {
           { targetConversationId },
           {
             headers: {
-                Authorization: `Bearer ${this.securityKey}`,
-		"Content-Type": "application/json"
+              Authorization: `Bearer ${this.securityKey}`,
+              "Content-Type": "application/json"
             }
           }
         );
@@ -821,6 +842,15 @@ export default {
       }
       const foundUser = this.otherUsers.find(user => user.id === senderId);
       return foundUser ? foundUser.name : "Unknown";
+    },
+    // --------------- Reply Message Methods ---------------
+    // Initiate a reply by storing the message being replied to.
+    initiateReply(message) {
+      this.replyTo = message;
+    },
+    // Cancel the reply.
+    cancelReply() {
+      this.replyTo = null;
     },
   },
   beforeDestroy() {
@@ -977,5 +1007,29 @@ export default {
   color: orange;
   margin-left: 5px;
 }
-</style>
 
+.reply-preview {
+  background-color: #f0f8ff;
+  border-left: 3px solid #2196F3;
+  padding: 8px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.reply-preview button {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  margin-left: 10px;
+  padding: 2px 5px;
+}
+
+.reply-preview button:hover {
+  color: #333;
+}
+
+</style>
