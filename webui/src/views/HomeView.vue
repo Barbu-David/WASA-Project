@@ -138,55 +138,62 @@
         <button @click="sendMessage">Send</button>
       </div>
 
-      <!-- Messages Section -->
-      <div class="messages" v-if="securityKey && selectedConversationDetails">
-        <h3>Messages</h3>
-        <div v-if="reversedMessages.length === 0">No messages in conversation</div>
-        <ul v-else>
-          <li v-for="(message, index) in reversedMessages" :key="index">
-            <!-- Display sender name only for messages from others -->
-            <span v-if="message.senderId !== userId">
-              <strong>{{ getSenderName(message.senderId) }}</strong>
-            </span>
-            <!-- For the logged-in user's messages, no sender name is shown -->
-            <span v-else></span>
-            ({{ message.timestamp ? formatTimestamp(message.timestamp) : 'No timestamp' }}):
-            <br />
-            <!-- Display message content in blue for the logged-in user's messages, normal otherwise -->
-            <span v-if="message.senderId === userId" style="color: blue;">
-              {{ message.stringContent || '[No content]' }}
-            </span>
-            <span v-else>
-              {{ message.stringContent || '[No content]' }}
-            </span>
-            <!-- Display checkmark for the logged-in user's message if available -->
-            <span v-if="message.senderId === userId && message.checkmark" style="margin-left: 5px; color: green;">
-              {{ message.checkmark }}
-            </span>
-            <!-- Display forwarded tag if the message has been forwarded -->
-            <span v-if="message.forwarded" class="forwarded-tag">Forwarded</span>
-            <!-- Action buttons: Delete, Forward, and Reply -->
-            <button
-              @click="deleteMessage(message)"
-              style="background-color: red; color: white; border: none; margin-left: 10px; cursor: pointer;"
-            >
-              Delete
-            </button>
-            <button
-              @click="openForwardUI(message)"
-              style="background-color: green; color: white; border: none; margin-left: 5px; cursor: pointer;"
-            >
-              Forward
-            </button>
-            <button
-              @click="initiateReply(message)"
-              style="background-color: orange; color: white; border: none; margin-left: 5px; cursor: pointer;"
-            >
-              Reply
-            </button>
-          </li>
-        </ul>
-      </div>
+    <!-- Messages Section -->
+    <div class="messages" v-if="securityKey && selectedConversationDetails">
+      <h3>Messages</h3>
+      <div v-if="reversedMessages.length === 0">No messages in conversation</div>
+      <ul v-else>
+        <li v-for="(message, index) in reversedMessages" :key="index">
+          <!-- Display the sender's photo if available -->
+          <img
+            v-if="getSenderPhoto(message.senderId)"
+            :src="getSenderPhoto(message.senderId)"
+            class="sender-photo"
+            alt="Sender Photo"
+          />
+          <!-- Display sender name only for messages from others -->
+          <span v-if="message.senderId !== userId">
+            <strong>{{ getSenderName(message.senderId) }}</strong>
+          </span>
+          <!-- For the logged-in user's messages, no sender name is shown -->
+          <span v-else></span>
+          ({{ message.timestamp ? formatTimestamp(message.timestamp) : 'No timestamp' }}):
+          <br />
+          <!-- Display message content in blue for the logged-in user's messages, normal otherwise -->
+          <span v-if="message.senderId === userId" style="color: blue;">
+            {{ message.stringContent || '[No content]' }}
+          </span>
+          <span v-else>
+            {{ message.stringContent || '[No content]' }}
+          </span>
+          <!-- Display checkmark for the logged-in user's message if available -->
+          <span v-if="message.senderId === userId && message.checkmark" style="margin-left: 5px; color: green;">
+            {{ message.checkmark }}
+          </span>
+          <!-- Display forwarded tag if the message has been forwarded -->
+          <span v-if="message.forwarded" class="forwarded-tag">Forwarded</span>
+          <!-- Action buttons: Delete, Forward, and Reply -->
+          <button
+            @click="deleteMessage(message)"
+            style="background-color: red; color: white; border: none; margin-left: 10px; cursor: pointer;"
+          >
+            Delete
+          </button>
+          <button
+            @click="openForwardUI(message)"
+            style="background-color: green; color: white; border: none; margin-left: 5px; cursor: pointer;"
+          >
+            Forward
+          </button>
+          <button
+            @click="initiateReply(message)"
+            style="background-color: orange; color: white; border: none; margin-left: 5px; cursor: pointer;"
+          >
+            Reply
+          </button>
+        </li>
+      </ul>
+    </div>
     </div>
 
     <!-- Forward Message Modal -->
@@ -497,6 +504,14 @@ export default {
     },
     
 
+  getSenderPhoto(senderId) {
+    if (senderId === this.userId) {
+      return this.userPhoto;
+    } else {
+      const user = this.otherUsers.find(u => u.id === senderId);
+      return user ? user.photo : null;
+    }
+  },
     // Fetch users.
     async fetchUsers() {
       if (!this.securityKey) {
@@ -1113,6 +1128,14 @@ export default {
 
 .reply-preview button:hover {
   color: #333;
+}
+
+.sender-photo {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: middle;
 }
 
 </style>
