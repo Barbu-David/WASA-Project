@@ -64,7 +64,6 @@ func (rt *_router) uncommentMessage(w http.ResponseWriter, r *http.Request, ps h
 		return
 	}
 
-
 	err = rt.db.RemoveComment(user_id, m_id)
 
 	if err != nil {

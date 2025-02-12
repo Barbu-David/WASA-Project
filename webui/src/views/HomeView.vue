@@ -28,35 +28,45 @@
 
       <div class="black-bar"></div>
 
-      <!-- Conversation List Section -->
-      <div v-if="securityKey" class="conversation-list">
-        <h3>Conversations</h3>
-        <div v-if="conversations.length > 0">
-          <ul>
-            <li
-              v-for="conversation in conversations"
-              :key="conversation.id"
-              @click="selectConversation(conversation)"
-              :class="{ selected: selectedConversationDetails && selectedConversationDetails.id === conversation.id }"
-            >
-              <!-- Display the computed conversation name and the preview message -->
-              <div>{{ conversation.name }}</div>
-              <div class="preview">
-                <span>{{ conversation.preview }}</span>
+    <!-- Conversation List Section -->
+    <div v-if="securityKey" class="conversation-list">
+      <h3>Conversations</h3>
+      <div v-if="conversations.length > 0">
+        <ul>
+          <li
+            v-for="conversation in conversations"
+            :key="conversation.id"
+            @click="selectConversation(conversation)"
+            :class="{ selected: selectedConversationDetails && selectedConversationDetails.id === conversation.id }"
+          >
+            <div class="conversation-item">
+              <!-- Display conversation photo if available -->
+              <img
+                v-if="conversation.photo"
+                :src="conversation.photo"
+                class="conversation-photo"
+                alt="Conversation Photo"
+              />
+              <div class="conversation-info">
+                <div class="conversation-name">{{ conversation.name }}</div>
+                <div class="preview">
+                  <span>{{ conversation.preview }}</span>
+                </div>
               </div>
-            </li>
-          </ul>
-        </div>
-        <div v-else>
-          <p>You have no conversations.</p>
-        </div>
-        <!-- Only show Add New Conversation button when no conversation is selected -->
-        <button @click="showNewConversation = true">
-          Add New Conversation
-        </button>
+            </div>
+          </li>
+        </ul>
       </div>
+      <div v-else>
+        <p>You have no conversations.</p>
+      </div>
+      <!-- Only show Add New Conversation button when no conversation is selected -->
+      <button @click="showNewConversation = true">
+        Add New Conversation
+      </button>
+        </div>
 
-      <!-- New Conversation Creation Section -->
+      <!--Conversation Creation Section -->
       <div v-if="securityKey && showNewConversation" class="new-conversation">
         <h3>Start a New Conversation</h3>
         <input v-model="userSearch" placeholder="Search users by name" />
@@ -73,55 +83,71 @@
       </div>
     </div>
 
-    <!-- Right Panel: Conversation Details with Group Options -->
-    <div class="conversation-details" v-if="selectedConversationDetails">
-      <h1>{{ selectedConversationDetails.name }}</h1>
-      <h3 v-if="selectedConversationDetails.isGroup">
-        Members:
-        <span
-          v-for="(member, index) in selectedConversationDetails.memberNames"
-          :key="member.id"
-        >
-          {{ member.name }}<span v-if="index < selectedConversationDetails.memberNames.length - 1">, </span>
-        </span>
-      </h3>
+        <!-- Right Panel: Conversation Details with Group Options -->
+        <div class="conversation-details" v-if="selectedConversationDetails">
+            <div class="conversation-header">
+                <img
+                    v-if="selectedConversationDetails.photo"
+                    :src="selectedConversationDetails.photo"
+                    class="conversation-photo-large"
+                    alt="Conversation Photo"
+                />
+                <h1>{{ selectedConversationDetails.name }}</h1>
+            </div>
+            <h3 v-if="selectedConversationDetails.isGroup">
+                Members:
+                <span
+                    v-for="(member, index) in selectedConversationDetails.memberNames"
+                    :key="member.id"
+                >
+                    {{ member.name }}<span v-if="index < selectedConversationDetails.memberNames.length - 1">, </span>
+                </span>
+            </h3>
 
-      <!-- Group Options: shown only if this is a group conversation -->
-      <div class="group-options" v-if="selectedConversationDetails.isGroup">
-        <h3>Options</h3>
-        <!-- Option 1: Leave Group (red button) -->
-        <button class="leave-group" style="background-color: red; color: white;" @click="leaveGroup">
-          Leave Group
-        </button>
-        <!-- Option 2: Add Members -->
-        <button @click="toggleAddMembers">Add Members</button>
-        <!-- Option 3: Change Group Name -->
-        <button @click="toggleChangeGroupName">Change Group Name</button>
-
-        <!-- UI for Adding New Members -->
-        <div v-if="showAddMembers">
-          <h4>Add New Members</h4>
-          <input v-model="newMembersSearch" placeholder="Search users" />
-          <ul>
-            <li v-for="user in filteredUsersForGroup" :key="user.id">
-              <label>
-                <input type="checkbox" :value="user.id" v-model="selectedNewMemberIds" />
-                {{ user.name }}
-              </label>
-            </li>
-          </ul>
-          <button @click="confirmAddMembers">Confirm Add Members</button>
-          <button @click="cancelAddMembers">Cancel</button>
+            <!-- Group Options: shown only if this is a group conversation -->
+            <div class="group-options" v-if="selectedConversationDetails.isGroup">
+                <h3>Options</h3>
+                <!-- Option 1: Leave Group (red button) -->
+                <button class="leave-group" style="background-color: red; color: white;" @click="leaveGroup">
+                    Leave Group
+                </button>
+                <!-- Option 2: Add Members -->
+                <button @click="toggleAddMembers">Add Members</button>
+                <!-- Option 3: Change Group Name -->
+                <button @click="toggleChangeGroupName">Change Group Name</button>
+                <!-- Option 4: Change Group Photo -->
+                <button @click="openGroupPhotoDialog">Change Group Photo</button>
+                <!-- Hidden file input to trigger file selector -->
+                <input
+                    type="file"
+                    ref="groupPhotoInput"
+                    accept="image/gif"
+                    style="display: none"
+                    @change="handleGroupPhotoChange"
+                />
+                <!-- UI for Adding New Members -->
+                <div v-if="showAddMembers">
+                    <h4>Add New Members</h4>
+                    <input v-model="newMembersSearch" placeholder="Search users" />
+                    <ul>
+                        <li v-for="user in filteredUsersForGroup" :key="user.id">
+                            <label>
+                                <input type="checkbox" :value="user.id" v-model="selectedNewMemberIds" />
+                                {{ user.name }}
+                            </label>
+                        </li>
+                    </ul>
+                    <button @click="confirmAddMembers">Confirm Add Members</button>
+                    <button @click="cancelAddMembers">Cancel</button>
+                </div>
+                <!-- UI for Changing Group Name -->
+                <div v-if="showChangeGroupName">
+                    <h4>Change Group Name</h4>
+                    <input v-model="newGroupName" placeholder="Enter new group name" />
+                    <button @click="confirmChangeGroupName">Confirm Change</button>
+                    <button @click="cancelChangeGroupName">Cancel</button>
+                </div>
         </div>
-
-        <!-- UI for Changing Group Name -->
-        <div v-if="showChangeGroupName">
-          <h4>Change Group Name</h4>
-          <input v-model="newGroupName" placeholder="Enter new group name" />
-          <button @click="confirmChangeGroupName">Confirm Change</button>
-          <button @click="cancelChangeGroupName">Cancel</button>
-        </div>
-      </div>
 
       <!-- Message Sending Section -->
       <div class="message-sending" v-if="securityKey && selectedConversationDetails">
@@ -453,7 +479,7 @@ export default {
         this.msg = "Failed to change name: " + (error.response?.data?.error || error.message);
       }
     },
-    // Fetch conversations.
+   
     async fetchConversations() {
       if (!this.securityKey) {
         this.msg = "Authorization key is missing. Please log in.";
@@ -493,6 +519,24 @@ export default {
             }
             const preview = details.preview || "";
             const photoPreview = details.photo_preview || false;
+            let convPhoto = null;
+            if (details.is_group) {
+              // For groups, fetch the group photo.
+              try {
+                const photoResponse = await this.$axios.get(`/conversations/${convId}/photo`, {
+                  headers: { Authorization: `Bearer ${this.securityKey}` },
+                  responseType: 'blob'
+                });
+                convPhoto = URL.createObjectURL(photoResponse.data);
+              } catch (err) {
+                console.error(`Failed to fetch group photo for conversation ${convId}:`, err);
+              }
+            } else {
+              // For one-on-one conversations, use the other user's photo.
+              const otherId = numericParticipants.find(id => id !== this.userId);
+              const otherUser = this.otherUsers.find(user => user.id === otherId);
+              convPhoto = otherUser ? otherUser.photo : null;
+            }
             convs.push({
               id: convId,
               name: convName,
@@ -500,18 +544,81 @@ export default {
               photoPreview: photoPreview,
               isGroup: details.is_group,
               participants: numericParticipants,
+              photo: convPhoto
             });
           } catch (err) {
             console.error(`Failed to fetch conversation ${convId}:`, err);
-            convs.push({ id: convId, name: "Unknown", preview: "", photoPreview: false, isGroup: true, participants: [] });
+            convs.push({
+              id: convId,
+              name: "Unknown",
+              preview: "",
+              photoPreview: false,
+              isGroup: true,
+              participants: [],
+              photo: null
+            });
           }
         }
         this.conversations = convs;
       } catch (e) {
         this.msg = "Failed to fetch conversations: " + e.message;
       }
-    },
-    
+   }, 
+  openGroupPhotoDialog() {
+    this.$refs.groupPhotoInput.click();
+  },
+
+  // Handles file selection and uploads the new group photo.
+  async handleGroupPhotoChange(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (file.type !== "image/gif") {
+      this.msg = "Please select a valid GIF image.";
+      return;
+    }
+
+    try {
+      await this.$axios.put(
+        `/conversations/${this.selectedConversationDetails.id}/photo`,
+        file,
+        {
+          headers: {
+            Authorization: `Bearer ${this.securityKey}`,
+            "Content-Type": "image/gif"
+          }
+        }
+      );
+      this.msg = "Group photo updated successfully!";
+      // Refresh the conversation photo in both the details and the conversation list.
+      await this.fetchConversationPhoto(this.selectedConversationDetails.id);
+    } catch (error) {
+      console.error("Failed to update group photo:", error);
+      this.msg = "Failed to update group photo: " + (error.response?.data?.error || error.message);
+    }
+  },
+
+  // Fetches and updates the conversation photo for the given conversation ID.
+  async fetchConversationPhoto(convId) {
+    try {
+      const response = await this.$axios.get(`/conversations/${convId}/photo`, {
+        headers: { Authorization: `Bearer ${this.securityKey}` },
+        responseType: 'blob'
+      });
+      const newPhoto = URL.createObjectURL(response.data);
+      // Update the selected conversation if it matches.
+      if (this.selectedConversationDetails && this.selectedConversationDetails.id === convId) {
+        this.selectedConversationDetails.photo = newPhoto;
+      }
+      // Also update the conversation in the list.
+      const conv = this.conversations.find(c => c.id === convId);
+      if (conv) {
+        conv.photo = newPhoto;
+      }
+    } catch (err) {
+      console.error("Failed to fetch conversation photo:", err);
+    }
+  },
 
   getSenderPhoto(senderId) {
     if (senderId === this.userId) {
@@ -1027,6 +1134,29 @@ export default {
   color: white;
   border: none;
 }
+.conversation-item {
+  display: flex;
+  align-items: center;
+}
+.conversation-photo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 10px;
+  object-fit: cover;
+}
+.conversation-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.conversation-photo-large {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  margin-right: 10px;
+  object-fit: cover;
+}
 
 /* Messages Styles */
 .messages {
@@ -1146,5 +1276,7 @@ export default {
   margin-right: 5px;
   vertical-align: middle;
 }
+
+
 
 </style>

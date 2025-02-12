@@ -20,7 +20,7 @@ func (rt *_router) getMaxId(w http.ResponseWriter, r *http.Request, ps httproute
 
 	token := authHeader[len(bearerPrefix):]
 
-	if token == "" { 
+	if token == "" {
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Empty token"})
 		return

@@ -1,13 +1,13 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"github.com/julienschmidt/httprouter"
+	"image/gif"
 	"net/http"
 	"strconv"
 	"wasatext/service/api/reqcontext"
-	"image/gif"
-	"bytes"
 )
 
 func (rt *_router) getMyPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
@@ -37,7 +37,6 @@ func (rt *_router) getMyPhoto(w http.ResponseWriter, r *http.Request, ps httprou
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid or unauthorized user ID"})
 		return
 	}
-
 
 	photo, err := rt.db.GetUserPhoto(requestedUserID)
 	if err != nil {

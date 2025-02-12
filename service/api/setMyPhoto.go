@@ -1,15 +1,15 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"github.com/julienschmidt/httprouter"
-	"net/http"
-	"strconv"
-	"wasatext/service/api/reqcontext"
-	"bytes"
 	"image/gif"
 	"io"
 	"mime"
+	"net/http"
+	"strconv"
+	"wasatext/service/api/reqcontext"
 )
 
 func (rt *_router) setMyPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
@@ -56,60 +56,59 @@ func (rt *_router) setMyPhoto(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 
+	// Check Content-Type is image/gif
+	contentType := r.Header.Get("Content-Type")
+	if contentType == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Missing Content-Type header"})
+		return
+	}
 
-        // Check Content-Type is image/gif
-        contentType := r.Header.Get("Content-Type")
-        if contentType == "" {
-            w.WriteHeader(http.StatusBadRequest)
-            _ = json.NewEncoder(w).Encode(map[string]string{"error": "Missing Content-Type header"})
-            return
-        }
+	mediaType, _, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid Content-Type header"})
+		return
+	}
 
-        mediaType, _, err := mime.ParseMediaType(contentType)
-        if err != nil {
-            w.WriteHeader(http.StatusBadRequest)
-            _ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid Content-Type header"})
-            return
-        }
+	if mediaType != "image/gif" {
+		w.WriteHeader(http.StatusUnsupportedMediaType)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Unsupported media type, expected image/gif"})
+		return
+	}
 
-        if mediaType != "image/gif" {
-            w.WriteHeader(http.StatusUnsupportedMediaType)
-            _ = json.NewEncoder(w).Encode(map[string]string{"error": "Unsupported media type, expected image/gif"})
-            return
-        }
+	// Read the request body
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Failed to read request body"})
+		return
+	}
+	defer r.Body.Close()
 
-        // Read the request body
-        body, err := io.ReadAll(r.Body)
-        if err != nil {
-            w.WriteHeader(http.StatusBadRequest)
-            _ = json.NewEncoder(w).Encode(map[string]string{"error": "Failed to read request body"})
-            return
-        }
-        defer r.Body.Close()
+	// Validate image size constraints
+	if len(body) < 40 || len(body) > 10000000 {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Image size must be between 40 and 10,000,000 bytes"})
+		return
+	}
 
-        // Validate image size constraints
-        if len(body) < 40 || len(body) > 10000000 {
-            w.WriteHeader(http.StatusBadRequest)
-            _ = json.NewEncoder(w).Encode(map[string]string{"error": "Image size must be between 40 and 10,000,000 bytes"})
-            return
-        }
+	// Decode the GIF image
+	gifImg, err := gif.DecodeAll(bytes.NewReader(body))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid GIF image"})
+		return
+	}
 
-        // Decode the GIF image
-        gifImg, err := gif.DecodeAll(bytes.NewReader(body))
-        if err != nil {
-            w.WriteHeader(http.StatusBadRequest)
-            _ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid GIF image"})
-            return
-        }
-
-        // Update the user's photo in the database
-        err = rt.db.SetUserPhoto(requestedUserID, gifImg)
-        if err != nil {
-            w.WriteHeader(http.StatusInternalServerError)
-            ctx.Logger.WithError(err).Error("Database error setting user photo")
-            _ = json.NewEncoder(w).Encode(map[string]string{"error": "Internal server error"})
-            return
-        }
+	// Update the user's photo in the database
+	err = rt.db.SetUserPhoto(requestedUserID, gifImg)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		ctx.Logger.WithError(err).Error("Database error setting user photo")
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Internal server error"})
+		return
+	}
 
 	w.WriteHeader(http.StatusNoContent)
 }

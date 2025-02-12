@@ -85,7 +85,6 @@ func (rt *_router) forwardMessage(w http.ResponseWriter, r *http.Request, ps htt
 		return
 	}
 
-
 	err = rt.db.SendMessage(user_id, requestBody.TargetConversationId, m_content, true, globaltime.Now())
 
 	if err != nil {

@@ -1,15 +1,15 @@
 package database
 
 import (
+	"bytes"
 	"image"
 	"image/color"
 	"image/gif"
-	"bytes"
 )
 
 func createDefaultGIF() *gif.GIF {
 	palette := color.Palette{
-		color.RGBA{0, 0, 255, 255}, 
+		color.RGBA{0, 0, 255, 255},
 	}
 	img := image.NewPaletted(image.Rect(0, 0, 100, 100), palette)
 	for y := 0; y < 100; y++ {
@@ -20,9 +20,9 @@ func createDefaultGIF() *gif.GIF {
 
 	return &gif.GIF{
 		Image:           []*image.Paletted{img},
-		Delay:           []int{100}, 
-		LoopCount:       0,          
-		BackgroundIndex: 0,          
+		Delay:           []int{100},
+		LoopCount:       0,
+		BackgroundIndex: 0,
 	}
 }
 
@@ -38,7 +38,6 @@ func decodeGIF(data []byte) (*gif.GIF, error) {
 	r := bytes.NewReader(data)
 	return gif.DecodeAll(r)
 }
-
 
 func (db *appdbimpl) AddNewUser(username string, securityKey string) (int, error) {
 
