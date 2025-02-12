@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"github.com/julienschmidt/httprouter"
+	"image/gif"
 	"net/http"
 	"strconv"
 	"wasatext/service/api/reqcontext"
@@ -36,47 +37,68 @@ func (rt *_router) sendMessage(w http.ResponseWriter, r *http.Request, ps httpro
 		return
 	}
 
-	// User must exist
-
 	user_id, err := rt.db.GetUserIDbyKey(token)
-
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Auth error"})
 		return
 	}
-
-	// And be a member of the conversation
 
 	member, err := rt.db.IsMemberConversation(user_id, conv_id)
-
-	if err != nil || member != true {
+	if err != nil || !member {
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Auth error"})
 		return
 	}
 
-	var requestBody struct {
-		Message string `json:"message"`
-	}
+	contentType := r.Header.Get("Content-Type")
+	var (
+		messageText string
+		isPhoto     bool
+		photoData   *gif.GIF
+	)
 
-	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		ctx.Logger.WithError(err).Error("Encoding failed fail")
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request body"})
+	switch contentType {
+	case "application/json":
+		var requestBody struct {
+			Message string `json:"message"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			ctx.Logger.WithError(err).Error("JSON decode failed")
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request body"})
+			return
+		}
+		messageText = requestBody.Message
+		isPhoto = false
+		photoData = nil
+
+		if len(messageText) > 10000 {
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "Message too long"})
+			return
+		}
+
+	case "image/gif":
+		img, err := gif.DecodeAll(r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			ctx.Logger.WithError(err).Error("GIF decode failed")
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid GIF data"})
+			return
+		}
+		messageText = ""
+		isPhoto = true
+		photoData = img
+
+	default:
+		w.WriteHeader(http.StatusUnsupportedMediaType)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Unsupported content type"})
 		return
 	}
 
-	if len(requestBody.Message) > 10000 {
-		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Message too long"})
-		return
-	}
-
-	err = rt.db.SendMessage(user_id, conv_id, requestBody.Message, false, globaltime.Now())
-
+	err = rt.db.SendMessage(user_id, conv_id, messageText, false, globaltime.Now(), isPhoto, photoData)
 	if err != nil {
-
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "InternalServerError"})
 		ctx.Logger.WithError(err).Error("database fail")

@@ -45,8 +45,8 @@ type AppDatabase interface {
 	GetConversationUsers(conv_id int) ([]int, error)
 	GetConversationMessages(conv_id int) ([]int, error)
 
-	SendMessage(senderID int, convID int, textContent string, forwarded bool, timestamp time.Time) error
-	GetMessage(m_id int) (int, string, bool, time.Time, error)
+	SendMessage(senderID int, convID int, textContent string, forwarded bool, timestamp time.Time, is_photo bool, photo *gif.GIF) error
+	GetMessage(m_id int) (int, string, bool, time.Time, bool, error)
 	DeleteMessage(m_id int) error
 
 	SeeMessage(user_id int, m_id int) error
@@ -54,14 +54,14 @@ type AppDatabase interface {
 
 	GetMessageCommentList(m_id int) ([]int, []string, error)
 	GetMessageLatest(conv_id int) (string, time.Time, bool, error)
-	
+
 	AddComment(sender_id int, m_id int, content string) error
 	RemoveComment(sender_id int, m_id int) error
 
 	IsSeenByAll(m_id int) (bool, error)
 	IsDeliveredToAll(m_id int) (bool, error)
 
-	// GetMessagePhoto(m_id int) (gif.GIF, error)
+	GetMessagePhoto(m_id int) (*gif.GIF, error)
 }
 
 type appdbimpl struct {

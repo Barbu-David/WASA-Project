@@ -5,8 +5,8 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"
-	"wasatext/service/api/reqcontext"
 	"time"
+	"wasatext/service/api/reqcontext"
 )
 
 func truncateString(s string) string {
@@ -109,30 +109,28 @@ func (rt *_router) getConversation(w http.ResponseWriter, r *http.Request, ps ht
 
 	preview, stamp, photo_preview, err := rt.db.GetMessageLatest(conv_id)
 
-
-        if err != nil {
-        	preview = ""
-		stamp = time.Now()
+	if err != nil {
+		preview = ""
+		stamp = time.Time{}
 		photo_preview = false
 	}
 
-	preview = truncateString(preview) 
-	
+	preview = truncateString(preview)
+
 	response := struct {
-		Participants []int  `json:"participants"`
-		Messages     []int  `json:"messages"`
-		PhotoPreview bool   `json:"photo_preview"`
-		Preview      string `json:"preview"`
-		IsGroup      bool   `json:"is_group"`
+		Participants []int     `json:"participants"`
+		Messages     []int     `json:"messages"`
+		PhotoPreview bool      `json:"photo_preview"`
+		Preview      string    `json:"preview"`
+		IsGroup      bool      `json:"is_group"`
 		Timestamp    time.Time `json:"timestamp"`
- 
 	}{
 		Participants: participants,
 		Messages:     messages,
 		Preview:      preview,
 		IsGroup:      is_group,
 		PhotoPreview: photo_preview,
-		Timestamp: stamp,
+		Timestamp:    stamp,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

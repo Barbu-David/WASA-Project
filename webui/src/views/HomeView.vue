@@ -168,6 +168,15 @@
           @keyup.enter="sendMessage"
         />
         <button @click="sendMessage">Send</button>
+        <button @click="openSendGIFDialog">Send GIF</button>
+        <!-- Hidden file input to trigger file selector -->
+         <input
+                    type="file"
+                    ref="gifSend"
+                    accept="image/gif"
+                    style="display: none"
+                    @change="handleSendGif"
+       />
       </div>
 
     <!-- Messages Section -->
@@ -175,55 +184,71 @@
       <h3>Messages</h3>
       <div v-if="reversedMessages.length === 0">No messages in conversation</div>
       <ul v-else>
-        <li v-for="(message, index) in reversedMessages" :key="index">
-          <!-- Display the sender's photo if available -->
-          <img
+    <li v-for="(message, index) in reversedMessages" :key="index">
+        <!-- Display sender's photo if available -->
+        <img
             v-if="getSenderPhoto(message.senderId)"
             :src="getSenderPhoto(message.senderId)"
             class="sender-photo"
             alt="Sender Photo"
-          />
-          <!-- Display sender name only for messages from others -->
-          <span v-if="message.senderId !== userId">
+        />
+
+        <!-- Display sender name for messages not from the logged-in user -->
+        <span v-if="message.senderId !== userId">
             <strong>{{ getSenderName(message.senderId) }}</strong>
-          </span>
-          <!-- For the logged-in user's messages, no sender name is shown -->
-          <span v-else></span>
-          ({{ message.timestamp ? formatTimestamp(message.timestamp) : 'No timestamp' }}):
-          <br />
-          <!-- Display message content in blue for the logged-in user's messages, normal otherwise -->
-          <span v-if="message.senderId === userId" style="color: blue;">
-            {{ message.stringContent || '[No content]' }}
-          </span>
-          <span v-else>
-            {{ message.stringContent || '[No content]' }}
-          </span>
-          <!-- Display checkmark for the logged-in user's message if available -->
-          <span v-if="message.senderId === userId && message.checkmark" style="margin-left: 5px; color: green;">
+        </span>
+        ({{ message.timestamp ? formatTimestamp(message.timestamp) : 'No timestamp' }}):
+        <br />
+
+        <!-- Render content: photo if photoContent is true, else text -->
+        <div>
+            <template v-if="message.photoContent">
+                <img
+                    v-if="message.photoUrl"
+                    :src="message.photoUrl"
+                    alt="Photo message"
+                    style="max-width: 300px;"
+                />
+                <span v-else>Loading photo...</span>
+            </template>
+            <template v-else>
+                <span v-if="message.senderId === userId" style="color: blue;">
+                    {{ message.stringContent || '[No content]' }}
+                </span>
+                <span v-else>
+                    {{ message.stringContent || '[No content]' }}
+                </span>
+            </template>
+        </div>
+
+        <!-- Optional: display checkmark, forwarded tag, and action buttons -->
+        <span
+            v-if="message.senderId === userId && message.checkmark"
+            style="margin-left: 5px; color: green;"
+        >
             {{ message.checkmark }}
-          </span>
-          <!-- Display forwarded tag if the message has been forwarded -->
-          <span v-if="message.forwarded" class="forwarded-tag">Forwarded</span>
-          <!-- Action buttons: Delete, Forward, and Reply -->
-          <button
+        </span>
+        <span v-if="message.forwarded" class="forwarded-tag">Forwarded</span>
+        <button
             @click="deleteMessage(message)"
             style="background-color: red; color: white; border: none; margin-left: 10px; cursor: pointer;"
-          >
+        >
             Delete
-          </button>
-          <button
+        </button>
+        <button
             @click="openForwardUI(message)"
             style="background-color: green; color: white; border: none; margin-left: 5px; cursor: pointer;"
-          >
+        >
             Forward
-          </button>
-          <button
+        </button>
+        <button
             @click="initiateReply(message)"
             style="background-color: orange; color: white; border: none; margin-left: 5px; cursor: pointer;"
-          >
+        >
             Reply
-          </button>
-        </li>
+        </button>
+    </li>
+
       </ul>
     </div>
     </div>
@@ -584,6 +609,38 @@ export default {
     this.$refs.groupPhotoInput.click();
   },
 
+  openSendGIFDialog() {
+    this.$refs.gifSend.click();
+  },
+
+ async handleSendGif(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (file.type !== "image/gif") {
+      this.msg = "Please select a valid GIF image.";
+      return;
+    }
+
+    try {
+      await this.$axios.post(
+        `/conversations/${this.selectedConversationDetails.id}`,
+        file,
+        {
+          headers: {
+            Authorization: `Bearer ${this.securityKey}`,
+            "Content-Type": "image/gif"
+          }
+        }
+      );
+      this.msg = "Message sent successfuly!";
+    } catch (error) {
+      console.error("Failed to send gif:", error);
+      this.msg = "Failed to send gif: " + (error.response?.data?.error || error.message);
+    }
+  },
+
+
   // Handles file selection and uploads the new group photo.
   async handleGroupPhotoChange(event) {
     const file = event.target.files[0];
@@ -789,23 +846,54 @@ export default {
           (error.response?.data?.error || error.message);
       }
     },
-    // Fetch messages for a conversation.
-    async fetchMessages(conversationId, messageIds) {
-      try {
-        const requests = messageIds.map(messageId =>
-          this.$axios.get(`/conversations/${conversationId}/messages/${messageId}`, {
-            headers: { Authorization: `Bearer ${this.securityKey}` },
+
+async fetchMessages(conversationId, messageIds) {
+  try {
+    // Fetch all messages in JSON first
+    const requests = messageIds.map(messageId =>
+      this.$axios.get(`/conversations/${conversationId}/messages/${messageId}`, {
+        headers: { Authorization: `Bearer ${this.securityKey}` },
+      })
+    );
+    const responses = await Promise.all(requests);
+    this.messages = responses.map((response, index) => ({
+      id: messageIds[index],
+      ...response.data, // includes properties like stringContent, senderId, timestamp, checkmark, forwarded, photoContent, etc.
+    }));
+
+    // For each message that has photo content, fetch the image binary
+    this.messages.forEach(message => {
+      if (message.photoContent) {
+        this.$axios
+          .get(`/conversations/${conversationId}/messages/${message.id}/photo`, {
+            headers: {
+              Authorization: `Bearer ${this.securityKey}`,
+              // Request the image content by specifying an Accept header for the image MIME type.
+              Accept: 'image/gif',
+            },
+            responseType: 'blob', // ensures we get binary data
           })
-        );
-        const responses = await Promise.all(requests);
-        this.messages = responses.map((response, index) => {
-          return { id: messageIds[index], ...response.data };
-        });
-      } catch (error) {
-        this.msg = "Failed to fetch messages: " +
-          (error.response?.data?.error || error.message);
+          .then(response => {
+            // Create an object URL for the blob and attach it to the message object.
+            message.photoUrl = URL.createObjectURL(response.data);
+          })
+          .catch(error => {
+            console.error(
+              "Error fetching photo for message:",
+              message.id,
+              error
+            );
+          });
       }
-    },
+    });
+  } catch (error) {
+    this.msg =
+      "Failed to fetch messages: " +
+      (error.response?.data?.error || error.message);
+  }
+},
+
+
     // Refresh messages.
     async refreshMessages() {
       if (!this.selectedConversationDetails) return;

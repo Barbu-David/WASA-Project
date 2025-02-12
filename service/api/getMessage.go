@@ -93,7 +93,7 @@ func (rt *_router) getMessage(w http.ResponseWriter, r *http.Request, ps httprou
 		mark = "..."
 	}
 
-	sender_id, content, fwded, stamp, err := rt.db.GetMessage(m_id)
+	sender_id, content, fwded, stamp, photoContent, err := rt.db.GetMessage(m_id)
 
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Database failed")
@@ -120,7 +120,7 @@ func (rt *_router) getMessage(w http.ResponseWriter, r *http.Request, ps httprou
 		Timestamp:     stamp,
 		Checkmark:     mark,
 		Forwarded:     fwded,
-		PhotoContent:  false,
+		PhotoContent:  photoContent,
 		Comments:      commentList,
 		CommentOwners: ownersList,
 	}

@@ -59,29 +59,26 @@ func (rt *_router) setGroupPhoto(w http.ResponseWriter, r *http.Request, ps http
 		return
 	}
 
+	// Check Content-Type is image/gif
+	contentType := r.Header.Get("Content-Type")
+	if contentType == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Missing Content-Type header"})
+		return
+	}
 
+	mediaType, _, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid Content-Type header"})
+		return
+	}
 
-        // Check Content-Type is image/gif
-        contentType := r.Header.Get("Content-Type")
-        if contentType == "" {
-                w.WriteHeader(http.StatusBadRequest)
-                _ = json.NewEncoder(w).Encode(map[string]string{"error": "Missing Content-Type header"})
-                return
-        }
-
-        mediaType, _, err := mime.ParseMediaType(contentType)
-        if err != nil {
-                w.WriteHeader(http.StatusBadRequest)
-                _ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid Content-Type header"})
-                return
-        }
-
-        if mediaType != "image/gif" {
-                w.WriteHeader(http.StatusUnsupportedMediaType)
-                _ = json.NewEncoder(w).Encode(map[string]string{"error": "Unsupported media type, expected image/gif"})
-                return
-        }
-
+	if mediaType != "image/gif" {
+		w.WriteHeader(http.StatusUnsupportedMediaType)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Unsupported media type, expected image/gif"})
+		return
+	}
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {

@@ -1,25 +1,33 @@
 package database
 
 import "time"
+import "image/gif"
 
-func (db *appdbimpl) SendMessage(senderID int, convID int, textContent string, forwarded bool, timestamp time.Time) error {
+func (db *appdbimpl) SendMessage(senderID int, convID int, textContent string, forwarded bool, timestamp time.Time, is_photo bool, photo *gif.GIF) error {
 	tx, err := db.c.Begin()
 	if err != nil {
 		return err
 	}
 
+	var photo_bytes []byte
+
+	if is_photo {
+		photo_bytes, err = encodeGIF(photo)
+		if err != nil {
+			return err
+		}
+	}
+
 	res, err := tx.Exec(`
-            INSERT INTO Messages (sender_id, conv_id, content, forwarded, timestamp, is_photo)
-            VALUES (?, ?, ?, ?, ?, ?)`,
-		senderID, convID, textContent, forwarded, timestamp, false)
+            INSERT INTO Messages (sender_id, conv_id, content, forwarded, timestamp, is_photo, gif_photo)
+            VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		senderID, convID, textContent, forwarded, timestamp, is_photo, photo_bytes)
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
 	msgID, err := res.LastInsertId()
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
@@ -28,7 +36,6 @@ func (db *appdbimpl) SendMessage(senderID int, convID int, textContent string, f
             FROM ConversationMembers 
             WHERE conv_id = ?`, convID)
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 	defer rows.Close()
@@ -36,7 +43,6 @@ func (db *appdbimpl) SendMessage(senderID int, convID int, textContent string, f
 	for rows.Next() {
 		var userID int
 		if err := rows.Scan(&userID); err != nil {
-			tx.Rollback()
 			return err
 		}
 
@@ -45,13 +51,11 @@ func (db *appdbimpl) SendMessage(senderID int, convID int, textContent string, f
                 VALUES (?, ?, ?, ?, ?)`,
 			msgID, userID, nil, false, false)
 		if err != nil {
-			tx.Rollback()
 			return err
 		}
 	}
 
 	if err := rows.Err(); err != nil {
-		tx.Rollback()
 		return err
 	}
 
