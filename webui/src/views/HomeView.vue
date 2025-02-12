@@ -83,6 +83,7 @@
       </div>
     </div>
 
+
         <!-- Right Panel: Conversation Details with Group Options -->
         <div class="conversation-details" v-if="selectedConversationDetails">
             <div class="conversation-header">
@@ -92,7 +93,12 @@
                     class="conversation-photo-large"
                     alt="Conversation Photo"
                 />
-                <h1>{{ selectedConversationDetails.name }}</h1>
+                <div class="conversation-header-info">
+                    <h1>{{ selectedConversationDetails.name }}</h1>
+                    <div class="conversation-preview">
+                        <i v-if="selectedConversationDetails.photoPreview" class="photo-icon">[Photo]</i>
+                    </div>
+                </div>
             </div>
             <h3 v-if="selectedConversationDetails.isGroup">
                 Members:
@@ -103,7 +109,6 @@
                     {{ member.name }}<span v-if="index < selectedConversationDetails.memberNames.length - 1">, </span>
                 </span>
             </h3>
-
             <!-- Group Options: shown only if this is a group conversation -->
             <div class="group-options" v-if="selectedConversationDetails.isGroup">
                 <h3>Options</h3>
@@ -147,7 +152,8 @@
                     <button @click="confirmChangeGroupName">Confirm Change</button>
                     <button @click="cancelChangeGroupName">Cancel</button>
                 </div>
-        </div>
+            </div>
+
 
       <!-- Message Sending Section -->
       <div class="message-sending" v-if="securityKey && selectedConversationDetails">
@@ -479,91 +485,101 @@ export default {
         this.msg = "Failed to change name: " + (error.response?.data?.error || error.message);
       }
     },
-   
-    async fetchConversations() {
-      if (!this.securityKey) {
-        this.msg = "Authorization key is missing. Please log in.";
-        return;
-      }
-      try {
-        const convIdsResponse = await this.$axios.get("/conversations", {
-          headers: { Authorization: `Bearer ${this.securityKey}` },
-        });
-        let conversationIds = convIdsResponse.data.conversations;
-        if (!Array.isArray(conversationIds)) {
-          console.log("Received conversation data:", convIdsResponse.data);
-          conversationIds = [];
-        }
-        const convs = [];
-        for (const convId of conversationIds) {
-          try {
-            const detailsResponse = await this.$axios.get(`/conversations/${convId}`, {
-              headers: { Authorization: `Bearer ${this.securityKey}` },
-            });
-            const details = detailsResponse.data;
-            const numericParticipants = (details.participants || []).map(p => Number(p));
-            let convName = "";
-            if (details.is_group) {
-              try {
-                const nameResponse = await this.$axios.get(`/conversations/${convId}/name`, {
-                  headers: { Authorization: `Bearer ${this.securityKey}` },
-                });
-                convName = nameResponse.data.name || "Group Conversation";
-              } catch (err) {
-                convName = "Group Conversation";
-              }
-            } else {
-              const otherId = numericParticipants.find(id => id !== this.userId);
-              const otherUser = this.otherUsers.find(user => user.id === otherId);
-              convName = otherUser ? otherUser.name : "Unknown";
+ 
+        async fetchConversations() {
+            if (!this.securityKey) {
+                this.msg = "Authorization key is missing. Please log in.";
+                return;
             }
-            const preview = details.preview || "";
-            const photoPreview = details.photo_preview || false;
-            let convPhoto = null;
-            if (details.is_group) {
-              // For groups, fetch the group photo.
-              try {
-                const photoResponse = await this.$axios.get(`/conversations/${convId}/photo`, {
-                  headers: { Authorization: `Bearer ${this.securityKey}` },
-                  responseType: 'blob'
+            try {
+                const convIdsResponse = await this.$axios.get("/conversations", {
+                    headers: { Authorization: `Bearer ${this.securityKey}` },
                 });
-                convPhoto = URL.createObjectURL(photoResponse.data);
-              } catch (err) {
-                console.error(`Failed to fetch group photo for conversation ${convId}:`, err);
-              }
-            } else {
-              // For one-on-one conversations, use the other user's photo.
-              const otherId = numericParticipants.find(id => id !== this.userId);
-              const otherUser = this.otherUsers.find(user => user.id === otherId);
-              convPhoto = otherUser ? otherUser.photo : null;
+                let conversationIds = convIdsResponse.data.conversations;
+                if (!Array.isArray(conversationIds)) {
+                    console.log("Received conversation data:", convIdsResponse.data);
+                    conversationIds = [];
+                }
+                const convs = [];
+                for (const convId of conversationIds) {
+                    try {
+                        const detailsResponse = await this.$axios.get(`/conversations/${convId}`, {
+                            headers: { Authorization: `Bearer ${this.securityKey}` },
+                        });
+                        const details = detailsResponse.data;
+                        const numericParticipants = (details.participants || []).map(p => Number(p));
+                        let convName = "";
+                        if (details.is_group) {
+                            try {
+                                const nameResponse = await this.$axios.get(`/conversations/${convId}/name`, {
+                                    headers: { Authorization: `Bearer ${this.securityKey}` },
+                                });
+                                convName = nameResponse.data.name || "Group Conversation";
+                            } catch (err) {
+                                convName = "Group Conversation";
+                            }
+                        } else {
+                            const otherId = numericParticipants.find(id => id !== this.userId);
+                            const otherUser = this.otherUsers.find(user => user.id === otherId);
+                            convName = otherUser ? otherUser.name : "Unknown";
+                        }
+                        const preview = details.preview || "";
+                        const photoPreview = details.photo_preview || false;
+                        let convPhoto = null;
+                        if (details.is_group) {
+                            // For groups, fetch the group photo.
+                            try {
+                                const photoResponse = await this.$axios.get(`/conversations/${convId}/photo`, {
+                                    headers: { Authorization: `Bearer ${this.securityKey}` },
+                                    responseType: 'blob'
+                                });
+                                convPhoto = URL.createObjectURL(photoResponse.data);
+                            } catch (err) {
+                                console.error(`Failed to fetch group photo for conversation ${convId}:`, err);
+                            }
+                        } else {
+                            // For one-on-one conversations, use the other user's photo.
+                            const otherId = numericParticipants.find(id => id !== this.userId);
+                            const otherUser = this.otherUsers.find(user => user.id === otherId);
+                            convPhoto = otherUser ? otherUser.photo : null;
+                        }
+                        convs.push({
+                            id: convId,
+                            name: convName,
+                            preview: preview,
+                            photoPreview: photoPreview,
+                            isGroup: details.is_group,
+                            participants: numericParticipants,
+                            photo: convPhoto,
+                            timestamp: details.timestamp
+                        });
+                    } catch (err) {
+                        console.error(`Failed to fetch conversation ${convId}:`, err);
+                        convs.push({
+                            id: convId,
+                            name: "Unknown",
+                            preview: "",
+                            photoPreview: false,
+                            isGroup: true,
+                            participants: [],
+                            photo: null,
+                            timestamp: null
+                        });
+                    }
+                }
+                // Sort conversations so that the latest (by timestamp) appears first
+                convs.sort((a, b) => {
+                    const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+                    const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+                    return timeB - timeA;
+                });
+                this.conversations = convs;
+            } catch (e) {
+                this.msg = "Failed to fetch conversations: " + e.message;
             }
-            convs.push({
-              id: convId,
-              name: convName,
-              preview: preview,
-              photoPreview: photoPreview,
-              isGroup: details.is_group,
-              participants: numericParticipants,
-              photo: convPhoto
-            });
-          } catch (err) {
-            console.error(`Failed to fetch conversation ${convId}:`, err);
-            convs.push({
-              id: convId,
-              name: "Unknown",
-              preview: "",
-              photoPreview: false,
-              isGroup: true,
-              participants: [],
-              photo: null
-            });
-          }
-        }
-        this.conversations = convs;
-      } catch (e) {
-        this.msg = "Failed to fetch conversations: " + e.message;
-      }
-   }, 
+        },
+  
+ 
   openGroupPhotoDialog() {
     this.$refs.groupPhotoInput.click();
   },

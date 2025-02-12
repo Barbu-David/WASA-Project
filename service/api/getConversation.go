@@ -6,7 +6,21 @@ import (
 	"net/http"
 	"strconv"
 	"wasatext/service/api/reqcontext"
+	"time"
 )
+
+func truncateString(s string) string {
+	truncated := make([]rune, 0, 10)
+	count := 0
+	for _, r := range s {
+		if count >= 10 {
+			return string(truncated) + "..."
+		}
+		truncated = append(truncated, r)
+		count++
+	}
+	return s
+}
 
 func (rt *_router) getConversation(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
 	authHeader := r.Header.Get("Authorization")
@@ -92,18 +106,33 @@ func (rt *_router) getConversation(w http.ResponseWriter, r *http.Request, ps ht
 		}
 
 	}
+
+	preview, stamp, photo_preview, err := rt.db.GetMessageLatest(conv_id)
+
+
+        if err != nil {
+        	preview = ""
+		stamp = time.Now()
+		photo_preview = false
+	}
+
+	preview = truncateString(preview) 
+	
 	response := struct {
 		Participants []int  `json:"participants"`
 		Messages     []int  `json:"messages"`
 		PhotoPreview bool   `json:"photo_preview"`
 		Preview      string `json:"preview"`
 		IsGroup      bool   `json:"is_group"`
+		Timestamp    time.Time `json:"timestamp"`
+ 
 	}{
 		Participants: participants,
 		Messages:     messages,
-		Preview:      ":=)",
+		Preview:      preview,
 		IsGroup:      is_group,
-		PhotoPreview: false,
+		PhotoPreview: photo_preview,
+		Timestamp: stamp,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

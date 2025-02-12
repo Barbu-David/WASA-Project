@@ -405,6 +405,11 @@ paths:
                   is_group:
                     type: boolean
                     description: if it is a group
+                  timestamp:
+                   type: string
+                   format: date-time
+                   description: The time the latest message was sent.
+                   example: "2024-11-27T10:00:00Z"
         '400':
           description: Invalid request due to malformed parameters.
           content:

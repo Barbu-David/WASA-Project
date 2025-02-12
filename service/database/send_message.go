@@ -9,9 +9,9 @@ func (db *appdbimpl) SendMessage(senderID int, convID int, textContent string, f
 	}
 
 	res, err := tx.Exec(`
-            INSERT INTO Messages (sender_id, conv_id, content, forwarded, timestamp)
-            VALUES (?, ?, ?, ?, ?)`,
-		senderID, convID, textContent, forwarded, timestamp)
+            INSERT INTO Messages (sender_id, conv_id, content, forwarded, timestamp, is_photo)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+		senderID, convID, textContent, forwarded, timestamp, false)
 	if err != nil {
 		tx.Rollback()
 		return err

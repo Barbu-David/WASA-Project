@@ -53,7 +53,8 @@ type AppDatabase interface {
 	ReceiveMessage(user_id int, m_id int) error
 
 	GetMessageCommentList(m_id int) ([]int, []string, error)
-
+	GetMessageLatest(conv_id int) (string, time.Time, bool, error)
+	
 	AddComment(sender_id int, m_id int, content string) error
 	RemoveComment(sender_id int, m_id int) error
 
