@@ -88,7 +88,7 @@ func (rt *_router) forwardMessage(w http.ResponseWriter, r *http.Request, ps htt
 	img, err := rt.db.GetMessagePhoto(m_id)
 
 	if err != nil {
-		img=nil
+		img = nil
 	}
 
 	err = rt.db.SendMessage(user_id, requestBody.TargetConversationId, m_content, true, globaltime.Now(), photo_content, img)
