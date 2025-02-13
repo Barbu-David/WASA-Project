@@ -81,17 +81,14 @@ func (rt *_router) forwardMessage(w http.ResponseWriter, r *http.Request, ps htt
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Internal Error"})
-		ctx.Logger.WithError(err).Error("database fail")
+		ctx.Logger.WithError(err).Error("database fail1")
 		return
 	}
 
 	img, err := rt.db.GetMessagePhoto(m_id)
 
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Internal Error"})
-		ctx.Logger.WithError(err).Error("database fail")
-		return
+		img=nil
 	}
 
 	err = rt.db.SendMessage(user_id, requestBody.TargetConversationId, m_content, true, globaltime.Now(), photo_content, img)
@@ -99,7 +96,7 @@ func (rt *_router) forwardMessage(w http.ResponseWriter, r *http.Request, ps htt
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "InternalServerError"})
-		ctx.Logger.WithError(err).Error("database fail")
+		ctx.Logger.WithError(err).Error("database fail3")
 		return
 	}
 
